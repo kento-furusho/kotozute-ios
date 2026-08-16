@@ -66,6 +66,9 @@ struct SignedInView: View {
     @State private var store: KotozuteStore
     /// 一度見たら二度と出さない。端末に残す。
     @AppStorage("hasSeenConcept") private var hasSeenConcept = false
+    /// 最初の1枚の画面を通過したか。書いたかどうかではなく「通ったか」で判断する
+    /// （「あとで」を選んだ人を毎回そこへ戻さないため）。
+    @AppStorage("hasPassedFirstKotozute") private var hasPassedFirstKotozute = false
 
     init(auth: AuthStore, router: InviteRouter) {
         self.auth = auth
@@ -95,9 +98,12 @@ struct SignedInView: View {
                     ConceptView { hasSeenConcept = true }
                 }
             case .noPair:
-                // 招待を抱えていれば受諾へ。無ければ自分が招待する側の画面。
+                // 招待を抱えていれば受諾へ。
                 if router.pendingToken != nil {
                     AcceptInviteView(router: router, store: store)
+                } else if !hasPassedFirstKotozute {
+                    // 招待より先に「書く」を一度体験してもらう。
+                    FirstKotozuteView(store: store) { hasPassedFirstKotozute = true }
                 } else {
                     InviteView(store: store, auth: auth, router: router)
                 }

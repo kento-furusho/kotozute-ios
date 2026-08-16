@@ -117,6 +117,7 @@ final class KotozuteStore {
         }
 
         do {
+            // ペア未成立でも書ける（ことづては書いた人の下に保存される）。
             _ = try await client.createKotozute(CreateKotozuteRequest(body: trimmed))
             // 書くと相互ロックが外れることがあるので、状態を取り直す。
             await load()
