@@ -6,6 +6,8 @@ import SwiftUI
 struct HomeView: View {
     @Bindable var store: KotozuteStore
     @Bindable var auth: AuthStore
+    /// ロック画面から「書く」へ移るとき。タブの切り替えは親が持っている。
+    var onWrite: () -> Void = {}
     /// 書き直し中のことづて。書くサイクルのものだけ開ける。
     @State private var editing: Kotozute?
     @State private var editError: String?
@@ -116,6 +118,7 @@ struct HomeView: View {
     }
 
     /// 相手の分はオープン済みだが、自分がまだ書いていない状態。
+    /// 罰ではなく交換なので、急かす言い方にしない（デザイン案の指定）。
     private var lockedCard: some View {
         infoCard {
             Text("\(store.partnerName)のことづてが、今週の分そろっている。")
@@ -124,6 +127,25 @@ struct HomeView: View {
             Text("ひとつ書くと、\(store.partnerName)のことづても見られる。")
                 .font(Theme.font(14))
                 .foregroundStyle(Theme.inkSoft)
+
+            Button {
+                onWrite()
+            } label: {
+                Text("ことづてを書く")
+                    .font(Theme.font(15, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 13)
+                    .background(Theme.accent)
+                    .clipShape(Capsule())
+            }
+            .padding(.top, 12)
+
+            Text("急がなくていい。気が向いたときに。")
+                .font(Theme.font(12))
+                .foregroundStyle(Theme.inkSoft)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 4)
         }
     }
 

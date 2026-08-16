@@ -19,7 +19,7 @@ struct FirstKotozuteView: View {
                 .foregroundStyle(Theme.ink)
                 .padding(.top, 40)
 
-            Text("さいきん、いいなと思ったこと。\nひとことでいい。")
+            Text("つながった相手が最初に見るのは、このことづて。")
                 .font(Theme.font(15))
                 .foregroundStyle(Theme.inkSoft)
                 .multilineTextAlignment(.center)
@@ -47,6 +47,9 @@ struct FirstKotozuteView: View {
             .shadow(color: Theme.ink.opacity(0.24), radius: 9, y: 7)
             .padding(.top, 28)
 
+            WritingHint()
+                .padding(.top, 18)
+
             Spacer()
 
             Button {
@@ -61,7 +64,7 @@ struct FirstKotozuteView: View {
                     if isSaving {
                         ProgressView().tint(.white)
                     } else {
-                        Text("しまう").font(Theme.font(17, weight: .bold))
+                        Text("壁に貼る").font(Theme.font(17, weight: .bold))
                     }
                 }
                 .foregroundStyle(.white)

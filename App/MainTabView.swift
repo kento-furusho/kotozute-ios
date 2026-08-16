@@ -45,7 +45,7 @@ struct MainTabView: View {
                 selection = .read
             }
         case .read:
-            HomeView(store: store, auth: auth)
+            HomeView(store: store, auth: auth) { selection = .write }
         case .wall:
             ArchiveView(store: archiveStore, partnerName: store.partnerName)
         case .settings:
@@ -140,6 +140,10 @@ struct ComposeView: View {
             .shadow(color: Theme.ink.opacity(0.24), radius: 9, y: 7)
             .padding(20)
 
+            WritingHint()
+                .padding(.horizontal, 20)
+                .padding(.bottom, 18)
+
             Button {
                 Task {
                     isSaving = true
@@ -152,7 +156,7 @@ struct ComposeView: View {
                     if isSaving {
                         ProgressView().tint(.white)
                     } else {
-                        Text("しまう").font(Theme.font(17, weight: .bold))
+                        Text("壁に貼る").font(Theme.font(17, weight: .bold))
                     }
                 }
                 .foregroundStyle(.white)

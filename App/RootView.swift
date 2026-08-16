@@ -192,6 +192,7 @@ struct InviteView: View {
     @Bindable var router: InviteRouter
     @State private var enteredCode = ""
     @State private var showsCodeEntry = false
+    @State private var isWriting = false
 
     var body: some View {
         ScrollView {
@@ -201,7 +202,7 @@ struct InviteView: View {
                     .foregroundStyle(Theme.ink)
                     .padding(.top, 48)
 
-                Text("リンクを送って、相手に開いてもらう。\nふたりそろうと、ことづてが動きだす。")
+                Text("リンクを送ると、それだけでふたりの壁になる。")
                     .font(Theme.font(15))
                     .foregroundStyle(Theme.inkSoft)
                     .multilineTextAlignment(.center)
@@ -239,6 +240,24 @@ struct InviteView: View {
                     ProgressView()
                         .padding(.top, 48)
                 }
+
+                // 待っているあいだも書ける（ことづては書いた人の下に貯まる）。
+                // 相手が来るまで何もできない、という時間にしない。
+                Text("相手を待つあいだも、ことづては書きためられる。")
+                    .font(Theme.font(13))
+                    .foregroundStyle(Theme.inkSoft)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 36)
+
+                if !store.myKotozute.isEmpty {
+                    StickyNoteList(items: store.myKotozute)
+                        .padding(.top, 8)
+                }
+
+                Button("ことづてを書く") { isWriting = true }
+                    .font(Theme.font(15, weight: .bold))
+                    .foregroundStyle(Theme.accent)
+                    .padding(.top, 14)
 
                 Button("招待をもらっている") { showsCodeEntry.toggle() }
                     .font(Theme.font(14))
@@ -278,6 +297,9 @@ struct InviteView: View {
         .background(Theme.background.ignoresSafeArea())
         // 開いた時点でリンクを用意しておく。誘うのが目的の画面なので、
         // 「つくる」を挟まずそのまま送れるようにする。
+        .sheet(isPresented: $isWriting) {
+            WriteView { body in Task { await store.write(body) } }
+        }
         .task {
             if store.inviteToken == nil { await store.createInvite() }
         }

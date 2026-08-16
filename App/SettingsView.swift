@@ -89,14 +89,32 @@ struct SettingsView: View {
                 .disabled(!hasChanges || isSaving)
                 .padding(.top, 16)
 
-                Divider().padding(.vertical, 32)
+                Divider().padding(.vertical, 28)
+
+                Text("ペア")
+                    .font(Theme.font(18, weight: .bold))
+                    .foregroundStyle(Theme.ink)
+
+                HStack {
+                    Text(store.partnerName.isEmpty ? "—" : store.partnerName)
+                        .font(Theme.font(15))
+                        .foregroundStyle(Theme.ink)
+                    Spacer()
+                }
+                .padding(.vertical, 12)
+
+                Divider().padding(.vertical, 28)
+
+                Text("アカウント")
+                    .font(Theme.font(18, weight: .bold))
+                    .foregroundStyle(Theme.ink)
 
                 Button("サインアウト") {
                     Task { await auth.signOut() }
                 }
                 .font(Theme.font(15))
                 .foregroundStyle(Theme.accent)
-                .frame(maxWidth: .infinity)
+                .padding(.top, 14)
             }
             .padding(20)
         }
