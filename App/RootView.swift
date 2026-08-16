@@ -7,6 +7,13 @@ struct RootView: View {
     @Bindable var router: InviteRouter
     /// 招待を見たあと、サインイン／登録へ進んだか。
     @State private var didContinueFromInvite = false
+    /// はじめる画面を抜けたか。抜けた先が登録かサインインかも覚えておく。
+    @State private var entry: Entry?
+
+    private enum Entry {
+        case register
+        case signIn
+    }
 
     var body: some View {
         Group {
@@ -19,8 +26,15 @@ struct RootView: View {
                     InviteLandingView(router: router) { didContinueFromInvite = true }
                 } else if case let .needsConfirmation(email) = auth.phase {
                     ConfirmView(auth: auth, email: email)
+                } else if let entry {
+                    AuthView(auth: auth, startsRegistering: entry == .register)
                 } else {
-                    AuthView(auth: auth)
+                    // 招待から来た人は「誰からの招待か」で惹きつけ済みなので、
+                    // はじめる画面を挟まずそのまま登録へ進める。
+                    WelcomeView(
+                        onStart: { entry = .register },
+                        onSignIn: { entry = .signIn }
+                    )
                 }
             case .signedIn:
                 // サインインし直したら作り直したいので、認証済みかどうかを id にする。
@@ -31,7 +45,10 @@ struct RootView: View {
         .task { await auth.restore() }
         .onChange(of: auth.phase) { _, new in
             // サインアウトしたら、招待の見せ方を最初からやり直す。
-            if new == .signedOut, router.pendingToken == nil { didContinueFromInvite = false }
+            if new == .signedOut, router.pendingToken == nil {
+                didContinueFromInvite = false
+                entry = nil
+            }
         }
     }
 
@@ -47,6 +64,8 @@ struct SignedInView: View {
     @Bindable var auth: AuthStore
     @Bindable var router: InviteRouter
     @State private var store: KotozuteStore
+    /// 一度見たら二度と出さない。端末に残す。
+    @AppStorage("hasSeenConcept") private var hasSeenConcept = false
 
     init(auth: AuthStore, router: InviteRouter) {
         self.auth = auth
@@ -69,7 +88,12 @@ struct SignedInView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Theme.background.ignoresSafeArea())
             case .needsProfile:
-                ProfileSetupView(store: store)
+                // 登録直後の人だけがここを通る。「どう動くか」を先に見せてから名前を聞く。
+                if hasSeenConcept {
+                    ProfileSetupView(store: store)
+                } else {
+                    ConceptView { hasSeenConcept = true }
+                }
             case .noPair:
                 // 招待を抱えていれば受諾へ。無ければ自分が招待する側の画面。
                 if router.pendingToken != nil {

@@ -4,9 +4,15 @@ import SwiftUI
 struct AuthView: View {
     @Bindable var auth: AuthStore
 
-    @State private var isRegistering = false
+    @State private var isRegistering: Bool
     @State private var email = ""
     @State private var password = ""
+
+    /// はじめる導線からは登録、「アカウントを持っている」からはサインインで開く。
+    init(auth: AuthStore, startsRegistering: Bool = false) {
+        self.auth = auth
+        _isRegistering = State(initialValue: startsRegistering)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
