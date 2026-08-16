@@ -119,19 +119,17 @@ struct HomeView: View {
                 }
             }
             lastCycleMineSection
-            myKotozuteSection
 
         case .waitingForOpen:
-            myKotozuteSection
-            waitingCard
+            countdownCard
+            lastCycleMineSection
 
         case .lockedUntilIWrite:
             lockedCard
             lastCycleMineSection
-            myKotozuteSection
 
         case .plainHome:
-            myKotozuteSection
+            countdownCard
             lastCycleMineSection
         }
     }
@@ -159,27 +157,54 @@ struct HomeView: View {
 
     // MARK: - 部品
 
-    private var myKotozuteSection: some View {
-        section("今週のことづて") {
-            if store.myKotozute.isEmpty {
-                Text("まだ何も書いていない。")
-                    .font(Theme.font(15))
+    /// 次のオープンまで。デザイン案が「オープン日は楽しみとして置く」としているので、
+    /// 急かす表示ではなく、待つ時間そのものを見せる。
+    @ViewBuilder
+    private var countdownCard: some View {
+        if let nextOpenAt = state.nextOpenAt,
+           let date = nextOpenAt.date(in: store.timezone) {
+            infoCard {
+                Text(Self.openLabel(for: date, in: store.timezone))
+                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .tracking(1.5)
+                    .foregroundStyle(Theme.accent)
+
+                Text(Self.remaining(until: date, in: store.timezone))
+                    .font(Theme.font(22, weight: .bold))
+                    .foregroundStyle(Theme.ink)
+
+                Text("\(Self.openFormatter.string(from: date))にオープン。")
+                    .font(Theme.font(13))
                     .foregroundStyle(Theme.inkSoft)
-                    .padding(.vertical, 8)
-            } else {
-                // 開いて読み、そこから書き直せる。オープン済みは確定扱いなので対象外。
-                StickyNoteList(items: store.myKotozute) { tapped in
-                    fullScreen = .detail(KotozuteDetail(
-                        items: store.myKotozute,
-                        startIndex: store.myKotozute.firstIndex(of: tapped) ?? 0,
-                        title: "今週のことづて",
-                        colorOffset: 0,
-                        isEditable: true,
-                        showsReply: false
-                    ))
+
+                if state.showsPartnerPresence {
+                    Text("\(store.partnerName)も、今週なにか書いている。")
+                        .font(Theme.font(14, weight: .medium))
+                        .foregroundStyle(Theme.ink)
+                        .padding(.top, 8)
                 }
             }
         }
+    }
+
+    /// 「SUNDAY OPEN」のような曜日ラベル。
+    private static func openLabel(for date: Date, in timezone: TimeZone) -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timezone
+        let names = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"]
+        let weekday = calendar.component(.weekday, from: date) - 1
+        return "\(names[max(0, min(6, weekday))]) OPEN"
+    }
+
+    /// 残り日数。日付の差で数える（時刻の差ではないので「あと0日」が今日になる）。
+    private static func remaining(until date: Date, in timezone: TimeZone) -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timezone
+        let today = calendar.startOfDay(for: Date())
+        let target = calendar.startOfDay(for: date)
+        let days = calendar.dateComponents([.day], from: today, to: target).day ?? 0
+        if days <= 0 { return "今日オープン" }
+        return "オープンまで あと\(days)日"
     }
 
     /// 自分は書いたが、まだオープン前。

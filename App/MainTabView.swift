@@ -24,6 +24,24 @@ struct MainTabView: View {
 
     @State private var selection: Tab = .read
 
+    /// シミュレータでの確認用。タブを押す代わり。
+    ///   xcrun simctl launch <udid> dev.kotozute.app --tab write|read|wall|settings
+    private static var launchTab: Tab? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "--tab"), index + 1 < arguments.count else { return nil }
+        switch arguments[index + 1] {
+        case "write": return .write
+        case "read": return .read
+        case "wall": return .wall
+        case "settings": return .settings
+        default: return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             NavigationStack {
@@ -33,17 +51,15 @@ struct MainTabView: View {
             footer
         }
         .background(Theme.background.ignoresSafeArea())
+        .onAppear { if let tab = Self.launchTab { selection = tab } }
     }
 
     @ViewBuilder
     private var content: some View {
         switch selection {
         case .write:
-            // 書いたら「見る」へ戻す。書きっぱなしで同じ画面に留まらない。
-            ComposeView { body in
-                await store.write(body)
-                selection = .read
-            }
+            // 書いた分もこの画面に並ぶので、「見る」へ飛ばさずここに留まる。
+            ComposeView(store: store)
         case .read:
             HomeView(store: store, auth: auth) { selection = .write }
         case .wall:
@@ -106,78 +122,5 @@ struct MainTabView: View {
             Circle()
                 .stroke(tint, lineWidth: 2)
         }
-    }
-}
-
-/// 「書く」タブの中身。シートではなく画面として出す。
-struct ComposeView: View {
-    let onSave: (String) async -> Void
-
-    @State private var body_ = ""
-    @State private var isSaving = false
-    @FocusState private var isFocused: Bool
-
-    var body: some View {
-        VStack(spacing: 0) {
-            ZStack(alignment: .topLeading) {
-                if body_.isEmpty {
-                    Text("いいな、と思ったこと")
-                        .font(Theme.font(16))
-                        .foregroundStyle(Theme.ink.opacity(0.3))
-                        .padding(.top, 20)
-                        .padding(.leading, 20)
-                }
-                TextEditor(text: $body_)
-                    .font(Theme.font(16))
-                    .foregroundStyle(Theme.ink)
-                    .scrollContentBackground(.hidden)
-                    .padding(12)
-                    .focused($isFocused)
-            }
-            .frame(height: 220)
-            .background(Theme.stickyPaper(at: 0).gradient)
-            .clipShape(RoundedRectangle(cornerRadius: 3))
-            .shadow(color: Theme.ink.opacity(0.24), radius: 9, y: 7)
-            .padding(20)
-
-            WritingHint()
-                .padding(.horizontal, 20)
-                .padding(.bottom, 18)
-
-            Button {
-                Task {
-                    isSaving = true
-                    await onSave(body_)
-                    isSaving = false
-                    body_ = ""
-                }
-            } label: {
-                Group {
-                    if isSaving {
-                        ProgressView().tint(.white)
-                    } else {
-                        Text("壁に貼る").font(Theme.font(17, weight: .bold))
-                    }
-                }
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(canSave ? Theme.accent : Theme.inkSoft.opacity(0.4))
-                .clipShape(Capsule())
-            }
-            .disabled(!canSave || isSaving)
-            .padding(.horizontal, 20)
-
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Theme.background.ignoresSafeArea())
-        .navigationTitle("ことづてを書く")
-        .navigationBarTitleDisplayMode(.inline)
-        .onAppear { isFocused = true }
-    }
-
-    private var canSave: Bool {
-        !body_.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }
