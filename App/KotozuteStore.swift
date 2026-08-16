@@ -22,6 +22,8 @@ final class KotozuteStore {
     private(set) var partnerName = ""
     private(set) var timezone = TimeZone(identifier: "Asia/Tokyo") ?? .current
     private(set) var inviteToken: String?
+    private(set) var isAccepting = false
+    private(set) var acceptError: String?
 
     /// nil のときは通信せず、手元の値だけで動く（起動引数での画面確認用）。
     private let client: KotozuteClient?
@@ -82,6 +84,24 @@ final class KotozuteStore {
             inviteToken = try await client.createInvite().token
         } catch {
             phase = .failed(Self.message(for: error))
+        }
+    }
+
+    /// 招待を受けてペアを成立させる。成立したら状態を取り直してホームへ進む。
+    func acceptInvite(token: String) async {
+        guard let client else { return }
+        isAccepting = true
+        acceptError = nil
+        defer { isAccepting = false }
+        do {
+            _ = try await client.acceptInvite(token: token)
+            await load()
+        } catch APIError.conflict {
+            acceptError = "この招待はもう使えない。期限切れか、すでに使われている。"
+        } catch APIError.badRequest {
+            acceptError = "自分の招待は受けられない。"
+        } catch {
+            acceptError = Self.message(for: error)
         }
     }
 

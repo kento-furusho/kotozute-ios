@@ -4,23 +4,35 @@ import SwiftUI
 /// 認証の状態で入口を分ける。サインイン後は GET /me を起点に画面を決める。
 struct RootView: View {
     @Bindable var auth: AuthStore
+    @Bindable var router: InviteRouter
+    /// 招待を見たあと、サインイン／登録へ進んだか。
+    @State private var didContinueFromInvite = false
 
     var body: some View {
         Group {
             switch auth.phase {
             case .checking:
                 loading
-            case .signedOut:
-                AuthView(auth: auth)
-            case let .needsConfirmation(email):
-                ConfirmView(auth: auth, email: email)
+            case .signedOut, .needsConfirmation:
+                // 招待リンクから来た未サインインの相手には、まず「誰からか」を見せる。
+                if router.pendingToken != nil, !didContinueFromInvite {
+                    InviteLandingView(router: router) { didContinueFromInvite = true }
+                } else if case let .needsConfirmation(email) = auth.phase {
+                    ConfirmView(auth: auth, email: email)
+                } else {
+                    AuthView(auth: auth)
+                }
             case .signedIn:
                 // サインインし直したら作り直したいので、認証済みかどうかを id にする。
-                SignedInView(auth: auth)
+                SignedInView(auth: auth, router: router)
                     .id("signed-in")
             }
         }
         .task { await auth.restore() }
+        .onChange(of: auth.phase) { _, new in
+            // サインアウトしたら、招待の見せ方を最初からやり直す。
+            if new == .signedOut, router.pendingToken == nil { didContinueFromInvite = false }
+        }
     }
 
     private var loading: some View {
@@ -33,10 +45,12 @@ struct RootView: View {
 /// サインイン済みの中身。API の状態で出し分ける。
 struct SignedInView: View {
     @Bindable var auth: AuthStore
+    @Bindable var router: InviteRouter
     @State private var store: KotozuteStore
 
-    init(auth: AuthStore) {
+    init(auth: AuthStore, router: InviteRouter) {
         self.auth = auth
+        self.router = router
         // TokenProvider に認証層をそのまま渡す。API クライアントは
         // トークンの取得元が Cognito であることを知らない。
         _store = State(initialValue: KotozuteStore(
@@ -57,7 +71,12 @@ struct SignedInView: View {
             case .needsProfile:
                 ProfileSetupView(store: store)
             case .noPair:
-                InviteView(store: store, auth: auth)
+                // 招待を抱えていれば受諾へ。無ければ自分が招待する側の画面。
+                if router.pendingToken != nil {
+                    AcceptInviteView(router: router, store: store)
+                } else {
+                    InviteView(store: store, auth: auth, router: router)
+                }
             case .ready:
                 HomeView(store: store, auth: auth)
             case let .failed(message):
@@ -139,6 +158,8 @@ struct ProfileSetupView: View {
 struct InviteView: View {
     @Bindable var store: KotozuteStore
     @Bindable var auth: AuthStore
+    @Bindable var router: InviteRouter
+    @State private var enteredCode = ""
 
     var body: some View {
         VStack(spacing: 0) {
@@ -162,7 +183,15 @@ struct InviteView: View {
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.line, lineWidth: 1))
                     .padding(.top, 24)
 
-                ShareLink(item: "ことづてに誘われている。招待コード: \(token)") {
+                // リンクとコードの両方を載せる。独自スキームのリンクは
+                // アプリによっては押せないので、コードだけでも受け取れるようにする。
+                ShareLink(item: """
+                ことづてに誘われている。
+                kotozute://invite/\(token)
+
+                リンクが開けないときは、このコードを入れてほしい:
+                \(token)
+                """) {
                     Text("リンクを送る")
                         .font(Theme.font(17, weight: .bold))
                         .foregroundStyle(.white)
@@ -185,6 +214,32 @@ struct InviteView: View {
                 .padding(.top, 28)
             }
 
+            Divider()
+                .padding(.top, 32)
+
+            Text("招待をもらった")
+                .font(Theme.font(15, weight: .bold))
+                .foregroundStyle(Theme.ink)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 24)
+
+            HStack(spacing: 10) {
+                TextField("招待コード", text: $enteredCode)
+                    .font(Theme.font(15))
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .padding(12)
+                    .background(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.line, lineWidth: 1))
+
+                Button("すすむ") { router.accept(token: enteredCode) }
+                    .font(Theme.font(15, weight: .bold))
+                    .foregroundStyle(enteredCode.isEmpty ? Theme.inkSoft : Theme.accent)
+                    .disabled(enteredCode.isEmpty)
+            }
+            .padding(.top, 10)
+
             Button("サインアウト") {
                 Task { await auth.signOut() }
             }
@@ -192,7 +247,6 @@ struct InviteView: View {
             .foregroundStyle(Theme.inkSoft)
             .padding(.top, 24)
 
-            Spacer()
             Spacer()
         }
         .padding(.horizontal, 28)

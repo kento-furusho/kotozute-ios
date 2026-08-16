@@ -36,6 +36,12 @@ targets:
           UIApplicationSupportsMultipleScenes: true
         # 付箋の色を活かしたいのでライト固定にする。ダーク対応は後で検討。
         UIUserInterfaceStyle: Light
+        # 招待リンク用の独自スキーム（kotozute://invite/<token>）。
+        # Universal Links にはドメインと apple-app-site-association が要るため、
+        # まずは独自スキームで通す。
+        CFBundleURLTypes:
+          - CFBundleURLName: dev.kotozute.app.invite
+            CFBundleURLSchemes: [kotozute]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.kotozute.app

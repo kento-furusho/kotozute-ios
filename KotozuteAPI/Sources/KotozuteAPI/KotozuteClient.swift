@@ -37,7 +37,8 @@ public struct URLSessionTransport: HTTPTransport {
 /// ペアや相手を解決するので、クライアントが ID を送る必要がない（送っても無視される）。
 public struct KotozuteClient: Sendable {
     private let baseURL: URL
-    private let tokenProvider: any TokenProvider
+    /// 公開エンドポイントだけを叩くクライアントでは nil。
+    private let tokenProvider: (any TokenProvider)?
     private let transport: any HTTPTransport
 
     private static let encoder: JSONEncoder = {
@@ -66,9 +67,11 @@ public struct KotozuteClient: Sendable {
 
     /// - Parameters:
     ///   - baseURL: 例 `https://xxxx.execute-api.ap-northeast-1.amazonaws.com/Prod`（末尾スラッシュ無し）
+    ///   - tokenProvider: 省略すると公開エンドポイント（`GET /invites/{token}`）専用になる。
+    ///     招待リンクを開いた未サインインの相手に「誰からの招待か」を見せる導線で使う。
     public init(
         baseURL: URL,
-        tokenProvider: any TokenProvider,
+        tokenProvider: (any TokenProvider)? = nil,
         transport: any HTTPTransport = URLSessionTransport()
     ) {
         self.baseURL = baseURL
@@ -204,6 +207,9 @@ public struct KotozuteClient: Sendable {
         }
 
         if authenticated {
+            guard let tokenProvider else {
+                throw APIError.unauthorized
+            }
             let token = try await tokenProvider.idToken()
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
