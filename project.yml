@@ -1,0 +1,44 @@
+# XcodeGen の定義。Kotozute.xcodeproj はここから生成するため git 管理しない
+# （生成物をコミットすると、Xcode が触るたびに巨大な差分が出てレビューできなくなる）。
+#   xcodegen generate
+name: Kotozute
+options:
+  bundleIdPrefix: dev.kotozute
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+
+packages:
+  KotozuteAPI:
+    path: KotozuteAPI
+
+targets:
+  Kotozute:
+    type: application
+    platform: iOS
+    sources:
+      - App
+    dependencies:
+      - package: KotozuteAPI
+        product: KotozuteAPI
+    # Info.plist は自動生成に任せず明示する。
+    # INFOPLIST_KEY_UILaunchScreen_Generation に任せると UILaunchScreen が入れ子で
+    # 二重に書き出され、iOS が互換モードと判断して画面が letterbox 表示になる。
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: ことづて
+        # 空の辞書で「SwiftUI 標準のローンチスクリーンを使う」の意味になる。
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
+        # 付箋の色を活かしたいのでライト固定にする。ダーク対応は後で検討。
+        UIUserInterfaceStyle: Light
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.kotozute.app
+        MARKETING_VERSION: "0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        # iPhone のみ。
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.0"

@@ -223,6 +223,23 @@ public struct ThisWeekResponse: Decodable, Sendable {
         case myKotozute, openStatus, canSeePartner, partnerKotozute, partnerHasWritten, nextOpenAt
     }
 
+    /// プレビューやモックから組み立てるための初期化。
+    public init(
+        myKotozute: [Kotozute],
+        openStatus: OpenStatus,
+        canSeePartner: Bool,
+        partnerKotozute: [Kotozute],
+        partnerHasWritten: Bool,
+        nextOpenAt: WallClock?
+    ) {
+        self.myKotozute = myKotozute
+        self.openStatus = openStatus
+        self.canSeePartner = canSeePartner
+        self.partnerKotozute = partnerKotozute
+        self.partnerHasWritten = partnerHasWritten
+        self.nextOpenAt = nextOpenAt
+    }
+
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         myKotozute = try c.decode([Kotozute].self, forKey: .myKotozute)
