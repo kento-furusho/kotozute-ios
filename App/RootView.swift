@@ -184,103 +184,113 @@ struct ProfileSetupView: View {
     }
 }
 
-/// ペア未成立のとき。招待リンクを作って渡す。
+/// ペア未成立のとき。オンボーディングの締めで、相手を誘う画面。
 struct InviteView: View {
     @Bindable var store: KotozuteStore
     @Bindable var auth: AuthStore
     @Bindable var router: InviteRouter
     @State private var enteredCode = ""
+    @State private var showsCodeEntry = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer()
-            Text("ふたりではじめる")
-                .font(Theme.font(26, weight: .bold))
-                .foregroundStyle(Theme.ink)
-            Text("リンクを送って、相手に開いてもらう。")
-                .font(Theme.font(14))
-                .foregroundStyle(Theme.inkSoft)
-                .padding(.top, 8)
-
-            if let token = store.inviteToken {
-                Text(token)
-                    .font(Theme.font(13, weight: .medium))
+        ScrollView {
+            VStack(spacing: 0) {
+                Text("ふたりではじめる")
+                    .font(Theme.font(26, weight: .bold))
                     .foregroundStyle(Theme.ink)
-                    .padding(14)
-                    .frame(maxWidth: .infinity)
-                    .background(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.line, lineWidth: 1))
-                    .padding(.top, 24)
+                    .padding(.top, 48)
 
-                // リンクとコードの両方を載せる。独自スキームのリンクは
-                // アプリによっては押せないので、コードだけでも受け取れるようにする。
-                ShareLink(item: """
-                ことづてに誘われている。
-                kotozute://invite/\(token)
-
-                リンクが開けないときは、このコードを入れてほしい:
-                \(token)
-                """) {
-                    Text("リンクを送る")
-                        .font(Theme.font(17, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(Theme.accent)
-                        .clipShape(Capsule())
-                }
-                .padding(.top, 20)
-            } else {
-                Button("招待をつくる") {
-                    Task { await store.createInvite() }
-                }
-                .font(Theme.font(17, weight: .bold))
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(Theme.accent)
-                .clipShape(Capsule())
-                .padding(.top, 28)
-            }
-
-            Divider()
-                .padding(.top, 32)
-
-            Text("招待をもらった")
-                .font(Theme.font(15, weight: .bold))
-                .foregroundStyle(Theme.ink)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, 24)
-
-            HStack(spacing: 10) {
-                TextField("招待コード", text: $enteredCode)
+                Text("リンクを送って、相手に開いてもらう。\nふたりそろうと、ことづてが動きだす。")
                     .font(Theme.font(15))
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .padding(12)
-                    .background(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.line, lineWidth: 1))
+                    .foregroundStyle(Theme.inkSoft)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(4)
+                    .padding(.top, 10)
 
-                Button("すすむ") { router.accept(token: enteredCode) }
-                    .font(Theme.font(15, weight: .bold))
-                    .foregroundStyle(enteredCode.isEmpty ? Theme.inkSoft : Theme.accent)
-                    .disabled(enteredCode.isEmpty)
+                if let token = store.inviteToken {
+                    ShareLink(item: Self.message(token: token)) {
+                        Text("リンクを送る")
+                            .font(Theme.font(17, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Theme.accent)
+                            .clipShape(Capsule())
+                    }
+                    .padding(.top, 36)
+
+                    Text("招待コード")
+                        .font(Theme.font(12))
+                        .foregroundStyle(Theme.inkSoft)
+                        .padding(.top, 24)
+
+                    Text(token)
+                        .font(Theme.font(13, weight: .medium))
+                        .foregroundStyle(Theme.ink)
+                        .textSelection(.enabled)
+                        .padding(12)
+                        .frame(maxWidth: .infinity)
+                        .background(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.line, lineWidth: 1))
+                        .padding(.top, 6)
+                } else {
+                    ProgressView()
+                        .padding(.top, 48)
+                }
+
+                Button("招待をもらっている") { showsCodeEntry.toggle() }
+                    .font(Theme.font(14))
+                    .foregroundStyle(Theme.inkSoft)
+                    .padding(.top, 32)
+
+                if showsCodeEntry {
+                    HStack(spacing: 10) {
+                        TextField("招待コード", text: $enteredCode)
+                            .font(Theme.font(15))
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .padding(12)
+                            .background(.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.line, lineWidth: 1))
+
+                        Button("すすむ") { router.accept(token: enteredCode) }
+                            .font(Theme.font(15, weight: .bold))
+                            .foregroundStyle(enteredCode.isEmpty ? Theme.inkSoft : Theme.accent)
+                            .disabled(enteredCode.isEmpty)
+                    }
+                    .padding(.top, 12)
+                }
+
+                Button("サインアウト") {
+                    Task { await auth.signOut() }
+                }
+                .font(Theme.font(13))
+                .foregroundStyle(Theme.inkSoft.opacity(0.7))
+                .padding(.top, 40)
+                .padding(.bottom, 32)
             }
-            .padding(.top, 10)
-
-            Button("サインアウト") {
-                Task { await auth.signOut() }
-            }
-            .font(Theme.font(14))
-            .foregroundStyle(Theme.inkSoft)
-            .padding(.top, 24)
-
-            Spacer()
+            .padding(.horizontal, 28)
         }
-        .padding(.horizontal, 28)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.background.ignoresSafeArea())
+        // 開いた時点でリンクを用意しておく。誘うのが目的の画面なので、
+        // 「つくる」を挟まずそのまま送れるようにする。
+        .task {
+            if store.inviteToken == nil { await store.createInvite() }
+        }
+    }
+
+    /// リンクとコードの両方を載せる。独自スキームのリンクは
+    /// アプリによっては押せないので、コードだけでも受け取れるようにする。
+    private static func message(token: String) -> String {
+        """
+        ことづてに誘われている。
+        kotozute://invite/\(token)
+
+        リンクが開けないときは、このコードを入れてほしい:
+        \(token)
+        """
     }
 }

@@ -20,6 +20,14 @@ final class AuthStore {
     private(set) var errorMessage: String?
     private(set) var isWorking = false
 
+    /// サインアップで使ったパスワード。確認コードを通した直後にそのまま
+    /// サインインするために持つ。**メモリだけ**で、保存も画面表示もしない。
+    /// アプリを再起動すると消えるので、そのときは確認画面で入力してもらう。
+    private var pendingPassword: String?
+
+    /// 確認画面でパスワードを聞く必要があるか。
+    var needsPasswordForConfirm: Bool { pendingPassword == nil }
+
     let authenticator: CognitoAuthenticator
 
     init() throws {
@@ -60,16 +68,22 @@ final class AuthStore {
     func signUp(email: String, password: String) async {
         await perform {
             try await self.authenticator.signUp(email: email, password: password)
+            self.pendingPassword = password
             self.phase = .needsConfirmation(email: email)
         }
     }
 
-    func confirm(email: String, code: String, password: String) async {
+    /// 確認コードを通し、そのままサインインまで済ませる。
+    /// password は、アプリを再起動してサインアップ時のパスワードを失ったときだけ渡す。
+    func confirm(email: String, code: String, password: String? = nil) async {
         await perform {
+            guard let password = password ?? self.pendingPassword else {
+                throw AuthError.underlying(message: "パスワードを入れてほしい。")
+            }
             try await self.authenticator.confirmSignUp(email: email, code: code)
-            // 確認が通ったらそのままサインインまで済ませる。コード入力の直後に
-            // もう一度パスワードを打たせない。
+            // コード入力の直後にもう一度パスワードを打たせない。
             try await self.authenticator.signIn(email: email, password: password)
+            self.pendingPassword = nil
             self.phase = .signedIn
         }
     }
@@ -94,6 +108,7 @@ final class AuthStore {
 
     func signOut() async {
         try? await authenticator.signOut()
+        pendingPassword = nil
         phase = .signedOut
     }
 

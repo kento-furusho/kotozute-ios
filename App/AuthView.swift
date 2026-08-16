@@ -161,13 +161,17 @@ struct ConfirmView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.line, lineWidth: 1))
 
-                SecureField("パスワード", text: $password)
-                    .font(Theme.font(16))
-                    .textContentType(.password)
-                    .padding(14)
-                    .background(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.line, lineWidth: 1))
+                // 通常はサインアップ時のパスワードを持ち回るので聞かない。
+                // アプリを再起動して失った場合だけ入力してもらう。
+                if auth.needsPasswordForConfirm {
+                    SecureField("パスワード", text: $password)
+                        .font(Theme.font(16))
+                        .textContentType(.password)
+                        .padding(14)
+                        .background(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.line, lineWidth: 1))
+                }
             }
             .padding(.top, 28)
 
@@ -179,7 +183,13 @@ struct ConfirmView: View {
             }
 
             Button {
-                Task { await auth.confirm(email: email, code: code, password: password) }
+                Task {
+                    await auth.confirm(
+                        email: email,
+                        code: code,
+                        password: auth.needsPasswordForConfirm ? password : nil
+                    )
+                }
             } label: {
                 Group {
                     if auth.isWorking {
@@ -213,6 +223,7 @@ struct ConfirmView: View {
     }
 
     private var canSubmit: Bool {
-        code.count >= 6 && password.count >= 8 && !auth.isWorking
+        guard code.count >= 6, !auth.isWorking else { return false }
+        return auth.needsPasswordForConfirm ? password.count >= 8 : true
     }
 }
