@@ -8,8 +8,24 @@ struct HomeView: View {
     @Bindable var auth: AuthStore
     /// ロック画面から「書く」へ移るとき。タブの切り替えは親が持っている。
     var onWrite: () -> Void = {}
-    /// 1枚ずつ読む画面。一覧の付箋をタップすると開く。
-    @State private var detail: KotozuteDetail?
+    /// 全画面で出すもの。fullScreenCover を2つ重ねると互いに潰し合うので、
+    /// ひとつにまとめて「いまどれを出しているか」で持つ。
+    private enum FullScreen: Identifiable {
+        case reveal(RevealItems)
+        case detail(KotozuteDetail)
+
+        var id: String {
+            switch self {
+            case let .reveal(item): "reveal-\(item.id)"
+            case let .detail(item): "detail-\(item.id)"
+            }
+        }
+    }
+
+    @State private var fullScreen: FullScreen?
+    /// 演出を出したサイクルの目印。相手の分の先頭 id をそのまま使う
+    /// （サイクルが進むと別の id になるので、次のオープンでまた出る）。
+    @AppStorage("seenRevealKey") private var seenRevealKey = ""
     /// 書き直し中のことづて。書くサイクルのものだけ開ける。
     @State private var editing: Kotozute?
     @State private var editError: String?
@@ -34,12 +50,28 @@ struct HomeView: View {
             .navigationBarTitleDisplayMode(.inline)
 
             .refreshable { await store.load() }
-            .fullScreenCover(item: $detail) { detail in
-                KotozuteDetailView(
-                    detail: detail,
-                    onReply: onWrite,
-                    onEdit: { editing = $0 }
-                )
+            .onChange(of: revealKey) { _, key in showRevealIfNeeded(key) }
+            .onAppear { showRevealIfNeeded(revealKey) }
+            .fullScreenCover(item: $fullScreen) { screen in
+                switch screen {
+                case let .reveal(wrapped):
+                    RevealView(partnerName: store.partnerName, items: wrapped.items) {
+                        fullScreen = .detail(KotozuteDetail(
+                            items: wrapped.items,
+                            startIndex: 0,
+                            title: "\(store.partnerName)からのことづて",
+                            colorOffset: 2,
+                            isEditable: false,
+                            showsReply: true
+                        ))
+                    }
+                case let .detail(detail):
+                    KotozuteDetailView(
+                        detail: detail,
+                        onReply: onWrite,
+                        onEdit: { editing = $0 }
+                    )
+                }
             }
             .sheet(item: $editing) { item in
                 WriteView(title: "書き直す", initialBody: item.body) { body in
@@ -56,20 +88,34 @@ struct HomeView: View {
 
     private var state: HomeState { store.homeState ?? HomeState(from: .empty) }
 
+    /// 解禁されている相手の分の先頭 id。解禁されていなければ空。
+    private var revealKey: String {
+        if case let .partnerVisible(items) = state.screen { return items.first?.id ?? "" }
+        return ""
+    }
+
+    /// まだ演出を出していないサイクルなら出す。
+    private func showRevealIfNeeded(_ key: String) {
+        guard !key.isEmpty, key != seenRevealKey else { return }
+        guard case let .partnerVisible(items) = state.screen else { return }
+        seenRevealKey = key
+        fullScreen = .reveal(RevealItems(items: items))
+    }
+
     @ViewBuilder
     private var content: some View {
         switch state.screen {
         case let .partnerVisible(items):
             section("\(store.partnerName)からのことづて") {
                 StickyNoteList(items: items, colorOffset: 2) { tapped in
-                    detail = KotozuteDetail(
+                    fullScreen = .detail(KotozuteDetail(
                         items: items,
                         startIndex: items.firstIndex(of: tapped) ?? 0,
                         title: "\(store.partnerName)からのことづて",
                         colorOffset: 2,
                         isEditable: false,
                         showsReply: true
-                    )
+                    ))
                 }
             }
             lastCycleMineSection
@@ -97,7 +143,7 @@ struct HomeView: View {
         if !state.lastCycleMine.isEmpty {
             section("じぶんのことづて") {
                 StickyNoteList(items: state.lastCycleMine, colorOffset: 4) { tapped in
-                    detail = KotozuteDetail(
+                    fullScreen = .detail(KotozuteDetail(
                         items: state.lastCycleMine,
                         startIndex: state.lastCycleMine.firstIndex(of: tapped) ?? 0,
                         title: "じぶんのことづて",
@@ -105,7 +151,7 @@ struct HomeView: View {
                         // オープン済みなので書き直せない。
                         isEditable: false,
                         showsReply: false
-                    )
+                    ))
                 }
             }
         }
@@ -123,14 +169,14 @@ struct HomeView: View {
             } else {
                 // 開いて読み、そこから書き直せる。オープン済みは確定扱いなので対象外。
                 StickyNoteList(items: store.myKotozute) { tapped in
-                    detail = KotozuteDetail(
+                    fullScreen = .detail(KotozuteDetail(
                         items: store.myKotozute,
                         startIndex: store.myKotozute.firstIndex(of: tapped) ?? 0,
                         title: "今週のことづて",
                         colorOffset: 0,
                         isEditable: true,
                         showsReply: false
-                    )
+                    ))
                 }
             }
         }
