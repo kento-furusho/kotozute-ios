@@ -9,14 +9,15 @@ struct MainTabView: View {
     @Bindable var auth: AuthStore
     let archiveStore: ArchiveStore
 
+    /// 「見る」と「壁」はどちらもことづてを読む画面で違いが分かりにくかったので、
+    /// 「見る」ひとつにまとめた（中身は上がいまのサイクル、下が壁）。
     enum Tab: CaseIterable {
-        case write, read, wall, settings
+        case write, read, settings
 
         var label: String {
             switch self {
             case .write: "書く"
             case .read: "見る"
-            case .wall: "壁"
             case .settings: "設定"
             }
         }
@@ -33,7 +34,6 @@ struct MainTabView: View {
         switch arguments[index + 1] {
         case "write": return .write
         case "read": return .read
-        case "wall": return .wall
         case "settings": return .settings
         default: return nil
         }
@@ -61,9 +61,7 @@ struct MainTabView: View {
             // 書いた分もこの画面に並ぶので、「見る」へ飛ばさずここに留まる。
             ComposeView(store: store)
         case .read:
-            HomeView(store: store, auth: auth) { selection = .write }
-        case .wall:
-            ArchiveView(store: archiveStore, partnerName: store.partnerName)
+            ViewingView(store: store, archiveStore: archiveStore) { selection = .write }
         case .settings:
             SettingsView(store: store, auth: auth)
         }
@@ -115,9 +113,6 @@ struct MainTabView: View {
                         Circle().fill(tint).padding(5)
                     }
                 }
-        case .wall:
-            RoundedRectangle(cornerRadius: 3)
-                .stroke(tint, lineWidth: 2)
         case .settings:
             Circle()
                 .stroke(tint, lineWidth: 2)

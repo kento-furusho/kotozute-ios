@@ -84,90 +84,69 @@ final class ArchiveStore {
     }
 }
 
-/// 月ごとのアーカイブ。過去分は、オープン済みなら相手のものも見られる。
-struct ArchiveView: View {
+/// 壁の中身。月をたどって読み終えたことづてを見る。
+/// 「見る」タブに埋め込むので、自前の画面（NavigationStack や背景）は持たない。
+struct ArchiveBrowser: View {
     @Bindable var store: ArchiveStore
     let partnerName: String
-
-    @State private var detail: KotozuteDetail?
+    let onTap: ([Kotozute], Kotozute) -> Void
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                monthPicker
+        VStack(alignment: .leading, spacing: 16) {
+            monthPicker
 
-                Picker("だれの", selection: $store.whose) {
-                    Text("じぶん").tag(ArchiveWhose.me)
-                    Text(partnerName.isEmpty ? "あいて" : partnerName).tag(ArchiveWhose.partner)
-                }
-                .pickerStyle(.segmented)
-
-                if let message = store.errorMessage {
-                    Text(message)
-                        .font(Theme.font(15))
-                        .foregroundStyle(Theme.inkSoft)
-                } else if store.items.isEmpty, !store.isLoading {
-                    Text("この月のことづては無い。")
-                        .font(Theme.font(15))
-                        .foregroundStyle(Theme.inkSoft)
-                        .padding(.top, 8)
-                } else {
-                    StickyNoteList(
-                        items: store.items,
-                        colorOffset: store.whose == .me ? 0 : 2
-                    ) { tapped in
-                        detail = KotozuteDetail(
-                            items: store.items,
-                            startIndex: store.items.firstIndex(of: tapped) ?? 0,
-                            title: store.whose == .me ? "じぶんのことづて" : "\(partnerName)のことづて",
-                            colorOffset: store.whose == .me ? 0 : 2,
-                            // 過去分は確定済み。書き直せない。
-                            isEditable: false,
-                            showsReply: false
-                        )
-                    }
-                }
-
-                if store.isLoading {
-                    ProgressView().frame(maxWidth: .infinity)
-                } else if store.hasMore {
-                    Button("もっと読む") {
-                        Task { await store.loadNext() }
-                    }
-                    .font(Theme.font(15, weight: .bold))
-                    .foregroundStyle(Theme.accent)
-                    .frame(maxWidth: .infinity)
-                }
+            Picker("だれの", selection: $store.whose) {
+                Text("じぶん").tag(ArchiveWhose.me)
+                Text(partnerName.isEmpty ? "あいて" : partnerName).tag(ArchiveWhose.partner)
             }
-            .padding(20)
+            .pickerStyle(.segmented)
+
+            if let message = store.errorMessage {
+                Text(message)
+                    .font(Theme.font(15))
+                    .foregroundStyle(Theme.inkSoft)
+            } else if store.items.isEmpty, !store.isLoading {
+                Text("この月のことづては無い。")
+                    .font(Theme.font(15))
+                    .foregroundStyle(Theme.inkSoft)
+                    .padding(.top, 4)
+            } else {
+                StickyNoteList(
+                    items: store.items,
+                    colorOffset: store.whose == .me ? 0 : 2
+                ) { onTap(store.items, $0) }
+            }
+
+            if store.isLoading {
+                ProgressView().frame(maxWidth: .infinity)
+            } else if store.hasMore {
+                Button("もっと読む") {
+                    Task { await store.loadNext() }
+                }
+                .font(Theme.font(15, weight: .bold))
+                .foregroundStyle(Theme.accent)
+                .frame(maxWidth: .infinity)
+            }
         }
-        .background(Theme.background.ignoresSafeArea())
-        .navigationTitle("アーカイブ")
-        .navigationBarTitleDisplayMode(.inline)
-        .fullScreenCover(item: $detail) { KotozuteDetailView(detail: $0) }
         .task { if store.items.isEmpty { await store.reload() } }
     }
 
     /// 月の行き来。同じ月の中だけを引く仕様なので、月単位で動かす。
     private var monthPicker: some View {
         HStack {
-            Button {
-                store.shiftMonth(by: -1)
-            } label: {
+            Button { store.shiftMonth(by: -1) } label: {
                 Image(systemName: "chevron.left")
             }
 
             Spacer()
 
             Text(Self.monthFormatter.string(from: store.month))
-                .font(Theme.font(18, weight: .bold))
+                .font(Theme.font(17, weight: .bold))
                 .foregroundStyle(Theme.ink)
 
             Spacer()
 
-            Button {
-                store.shiftMonth(by: 1)
-            } label: {
+            Button { store.shiftMonth(by: 1) } label: {
                 Image(systemName: "chevron.right")
             }
             .disabled(store.isCurrentMonth)
