@@ -1,12 +1,22 @@
 import SwiftUI
 
-/// ことづてを書く。1枚 = 付箋1枚。
+/// ことづてを書く／書き直す。1枚 = 付箋1枚。
+///
+/// 編集は書くサイクルのものだけ。オープン済みは確定扱いで、サーバーが 409 で弾く。
 struct WriteView: View {
+    let title: String
     let onSave: (String) -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @State private var body_ = ""
+    @State private var body_: String
     @FocusState private var isFocused: Bool
+
+    /// - Parameter initialBody: 空なら新規、入っていれば書き直し。
+    init(title: String = "ことづてを書く", initialBody: String = "", onSave: @escaping (String) -> Void) {
+        self.title = title
+        self.onSave = onSave
+        _body_ = State(initialValue: initialBody)
+    }
 
     var body: some View {
         NavigationStack {
@@ -35,7 +45,7 @@ struct WriteView: View {
                 Spacer()
             }
             .background(Theme.background)
-            .navigationTitle("ことづてを書く")
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

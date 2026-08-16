@@ -41,15 +41,23 @@ struct StickyNoteList: View {
     let items: [Kotozute]
     /// 色の巡回開始位置。自分と相手で色が揃いすぎないようにずらす。
     var colorOffset: Int = 0
+    /// タップで開くとき（書き直し）。nil ならタップに反応しない。
+    var onTap: ((Kotozute) -> Void)?
 
     var body: some View {
         VStack(spacing: 14) {
             ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                StickyNote(
+                let note = StickyNote(
                     kotozute: item,
                     color: Theme.stickyColor(at: index + colorOffset),
                     tilt: index.isMultiple(of: 2) ? -0.7 : 0.8
                 )
+                if let onTap {
+                    Button { onTap(item) } label: { note }
+                        .buttonStyle(.plain)
+                } else {
+                    note
+                }
             }
         }
     }

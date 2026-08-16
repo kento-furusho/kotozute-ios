@@ -64,6 +64,7 @@ struct SignedInView: View {
     @Bindable var auth: AuthStore
     @Bindable var router: InviteRouter
     @State private var store: KotozuteStore
+    @State private var archiveStore: ArchiveStore
     /// 一度見たら二度と出さない。端末に残す。
     @AppStorage("hasSeenConcept") private var hasSeenConcept = false
     /// 最初の1枚の画面を通過したか。書いたかどうかではなく「通ったか」で判断する
@@ -75,12 +76,12 @@ struct SignedInView: View {
         self.router = router
         // TokenProvider に認証層をそのまま渡す。API クライアントは
         // トークンの取得元が Cognito であることを知らない。
-        _store = State(initialValue: KotozuteStore(
-            client: KotozuteClient(
-                baseURL: Config.apiBaseURL,
-                tokenProvider: auth.authenticator
-            )
-        ))
+        let client = KotozuteClient(
+            baseURL: Config.apiBaseURL,
+            tokenProvider: auth.authenticator
+        )
+        _store = State(initialValue: KotozuteStore(client: client))
+        _archiveStore = State(initialValue: ArchiveStore(client: client))
     }
 
     var body: some View {
@@ -108,7 +109,7 @@ struct SignedInView: View {
                     InviteView(store: store, auth: auth, router: router)
                 }
             case .ready:
-                HomeView(store: store, auth: auth)
+                HomeView(store: store, auth: auth, archiveStore: archiveStore)
             case let .failed(message):
                 errorView(message)
             }

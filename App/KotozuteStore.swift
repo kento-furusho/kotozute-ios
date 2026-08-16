@@ -21,6 +21,9 @@ final class KotozuteStore {
     private(set) var homeState: HomeState?
     private(set) var partnerName = ""
     private(set) var timezone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+    /// オープンの曜日（0=日〜6=土）と時刻（"HH:MM"）。設定画面で変える。
+    private(set) var openDayOfWeek = 5
+    private(set) var openTime = "20:00"
     private(set) var inviteToken: String?
     private(set) var isAccepting = false
     private(set) var acceptError: String?
@@ -57,6 +60,8 @@ final class KotozuteStore {
             let pair = try await client.pair()
             partnerName = pair.partner.displayName
             timezone = TimeZone(identifier: pair.timezone) ?? timezone
+            openDayOfWeek = pair.openDayOfWeek
+            openTime = pair.openTime
 
             // 3. 今週の状態。相互ロックの判定はここに入っている。
             let thisWeek = try await client.thisWeek()
@@ -123,6 +128,38 @@ final class KotozuteStore {
             await load()
         } catch {
             phase = .failed(Self.message(for: error))
+        }
+    }
+
+    /// 本文の書き直し。書くサイクルのものだけ通る。
+    /// オープン済みならサーバーが 409 を返すので、その旨を伝えて状態を取り直す。
+    func edit(id: String, body: String) async -> String? {
+        guard let client else { return nil }
+        let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        do {
+            _ = try await client.updateKotozute(id: id, body: UpdateKotozuteRequest(body: trimmed))
+            await load()
+            return nil
+        } catch APIError.conflict {
+            await load()
+            return "オープン済みのことづては書き直せない。"
+        } catch {
+            return Self.message(for: error)
+        }
+    }
+
+    /// オープンの曜日・時刻を変える。成功したら状態を取り直して次回オープン日を更新する。
+    func updateSchedule(openDayOfWeek: Int, openTime: String) async -> String? {
+        guard let client else { return nil }
+        do {
+            _ = try await client.updatePair(
+                UpdatePairRequest(openDayOfWeek: openDayOfWeek, openTime: openTime)
+            )
+            await load()
+            return nil
+        } catch {
+            return Self.message(for: error)
         }
     }
 

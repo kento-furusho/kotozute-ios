@@ -6,7 +6,13 @@ import SwiftUI
 struct HomeView: View {
     @Bindable var store: KotozuteStore
     @Bindable var auth: AuthStore
+    let archiveStore: ArchiveStore
     @State private var isWriting = false
+    /// 書き直し中のことづて。書くサイクルのものだけ開ける。
+    @State private var editing: Kotozute?
+    @State private var editError: String?
+    @State private var showsArchive = false
+    @State private var showsSettings = false
 
     var body: some View {
         NavigationStack {
@@ -26,10 +32,40 @@ struct HomeView: View {
             }
             .navigationTitle("ことづて")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { demoMenu }
+            .navigationDestination(isPresented: $showsArchive) {
+                ArchiveView(store: archiveStore, partnerName: store.partnerName)
+            }
+            .navigationDestination(isPresented: $showsSettings) {
+                SettingsView(store: store, auth: auth)
+            }
+            .task {
+                #if DEBUG
+                // シミュレータでの確認用。メニューを開くタップの代わり。
+                //   xcrun simctl launch <udid> dev.kotozute.app --screen archive|settings
+                let arguments = ProcessInfo.processInfo.arguments
+                if let index = arguments.firstIndex(of: "--screen"), index + 1 < arguments.count {
+                    switch arguments[index + 1] {
+                    case "archive": showsArchive = true
+                    case "settings": showsSettings = true
+                    default: break
+                    }
+                }
+                #endif
+            }
+            .toolbar { menu }
             .overlay(alignment: .bottom) { writeButton }
             .sheet(isPresented: $isWriting) {
                 WriteView { body in Task { await store.write(body) } }
+            }
+            .sheet(item: $editing) { item in
+                WriteView(title: "書き直す", initialBody: item.body) { body in
+                    Task { editError = await store.edit(id: item.id, body: body) }
+                }
+            }
+            .alert("書き直せなかった", isPresented: .constant(editError != nil)) {
+                Button("とじる") { editError = nil }
+            } message: {
+                Text(editError ?? "")
             }
         }
     }
@@ -82,7 +118,8 @@ struct HomeView: View {
                     .foregroundStyle(Theme.inkSoft)
                     .padding(.vertical, 8)
             } else {
-                StickyNoteList(items: store.myKotozute)
+                // 書くサイクルのものだけ書き直せる。オープン済みは確定扱い。
+                StickyNoteList(items: store.myKotozute) { editing = $0 }
             }
         }
     }
@@ -160,12 +197,13 @@ struct HomeView: View {
         .padding(.bottom, 12)
     }
 
-    private var demoMenu: some ToolbarContent {
+    private var menu: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
-                Button("読み込み直す") { Task { await store.load() } }
+                Button("アーカイブ") { showsArchive = true }
+                Button("設定") { showsSettings = true }
                 Divider()
-                Button("サインアウト", role: .destructive) { Task { await auth.signOut() } }
+                Button("読み込み直す") { Task { await store.load() } }
             } label: {
                 Image(systemName: "ellipsis")
             }
