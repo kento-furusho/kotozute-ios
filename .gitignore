@@ -14,4 +14,3 @@ DerivedData/
 # XcodeGen の生成物（project.yml から再生成する）
 Kotozute.xcodeproj/
 App/Info.plist
-.build-ios/

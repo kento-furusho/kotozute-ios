@@ -43,6 +43,7 @@ struct HomeView: View {
             section("\(store.partnerName)からのことづて") {
                 StickyNoteList(items: items, colorOffset: 2)
             }
+            lastCycleMineSection
             myKotozuteSection
 
         case .waitingForOpen:
@@ -51,10 +52,23 @@ struct HomeView: View {
 
         case .lockedUntilIWrite:
             lockedCard
+            lastCycleMineSection
             myKotozuteSection
 
         case .plainHome:
             myKotozuteSection
+            lastCycleMineSection
+        }
+    }
+
+    /// 直前のサイクルに自分が書いた分。次のオープンまでここで読める。
+    /// ふたりで読む日に、自分が書いたものだけ画面から消えるのを避ける。
+    @ViewBuilder
+    private var lastCycleMineSection: some View {
+        if !state.lastCycleMine.isEmpty {
+            section("じぶんのことづて") {
+                StickyNoteList(items: state.lastCycleMine, colorOffset: 4)
+            }
         }
     }
 

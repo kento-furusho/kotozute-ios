@@ -18,22 +18,21 @@ final class HomeStateTests: XCTestCase {
                 .joined(separator: ",")
         }
 
-        var json = """
+        // canSeePartner=false のときサーバーは lastCycle.partner をキーごと返さないので、
+        // テストでも同じ形にする。
+        let partnerKey = canSeePartner
+            ? #", "partner": [\#(items(partnerCount, prefix: "p"))]"#
+            : ""
+        let json = """
         {
           "myKotozute": [\(items(myCount, prefix: "m"))],
           "openStatus": "\(openStatus.rawValue)",
           "canSeePartner": \(canSeePartner),
+          "lastCycle": { "mine": [] \(partnerKey) },
           "partnerHasWritten": \(partnerHasWritten),
           "nextOpenAt": "2026-08-14T20:00"
-        """
-        // canSeePartner=false のときはサーバーがキーごと返さないので、テストでも同じ形にする。
-        if canSeePartner {
-            json += """
-            ,
-              "partnerKotozute": [\(items(partnerCount, prefix: "p"))]
-            """
         }
-        json += "\n}"
+        """
 
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601

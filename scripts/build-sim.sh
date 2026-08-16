@@ -6,15 +6,15 @@
 #   ./scripts/build-sim.sh --demo-state locked              通信せず画面だけ確認
 #
 # 署名について:
-#   aws-sdk-swift のリソースバンドルをアプリへコピーする際、macOS が拡張属性
-#   （com.apple.provenance）を付ける。codesign はこれを "detritus" として拒否するため、
-#   1度目のビルドが署名で失敗する。属性を落として署名だけやり直せば通るので、
-#   失敗したら一度だけ掃除して再実行する。
+#   このリポジトリは ~/Documents 配下にあり iCloud Drive の同期対象。同期プロセスが
+#   ビルド生成物に拡張属性（FinderInfo / fileprovider）を付け続け、codesign が
+#   "detritus not allowed" で失敗する。消してもすぐ付け直されるため、
+#   DerivedData を同期対象外（~/Library/Developer/Xcode/DerivedData）に置く。
 set -uo pipefail
 
 UDID="${KOTOZUTE_SIM_UDID:-6C33D43C-36C0-4DDF-B4E7-EB501C0BE006}"
 BUNDLE_ID="dev.kotozute.app"
-DERIVED=".build-ios"
+DERIVED="$HOME/Library/Developer/Xcode/DerivedData/kotozute-ios"
 APP="$DERIVED/Build/Products/Debug-iphonesimulator/Kotozute.app"
 
 cd "$(dirname "$0")/.."
@@ -31,19 +31,9 @@ build() {
 }
 
 if ! build; then
-  if grep -q "detritus" /tmp/kotozute-build.log; then
-    echo "署名で弾かれたので拡張属性を落として再試行する"
-    xattr -cr "$APP" 2>/dev/null
-    if ! build; then
-      grep -E "error:" /tmp/kotozute-build.log | sort -u | head -20
-      echo "ビルド失敗（詳細は /tmp/kotozute-build.log）"
-      exit 1
-    fi
-  else
-    grep -E "error:" /tmp/kotozute-build.log | sort -u | head -20
-    echo "ビルド失敗（詳細は /tmp/kotozute-build.log）"
-    exit 1
-  fi
+  grep -E "error:" /tmp/kotozute-build.log | sort -u | head -20
+  echo "ビルド失敗（詳細は /tmp/kotozute-build.log）"
+  exit 1
 fi
 
 echo "ビルド成功"

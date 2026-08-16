@@ -36,13 +36,6 @@ targets:
           UIApplicationSupportsMultipleScenes: true
         # 付箋の色を活かしたいのでライト固定にする。ダーク対応は後で検討。
         UIUserInterfaceStyle: Light
-    # aws-sdk-swift のリソースバンドルをコピーすると macOS が拡張属性
-    # （com.apple.provenance）を付け、codesign が "detritus not allowed" で失敗する。
-    # 署名はビルドフェーズの後に走るので、最後のフェーズで属性を落としておく。
-    postBuildScripts:
-      - name: 拡張属性を落とす（署名対策）
-        script: xattr -cr "$TARGET_BUILD_DIR/$WRAPPER_NAME"
-        basedOnDependencyAnalysis: false
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.kotozute.app

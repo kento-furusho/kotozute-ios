@@ -209,18 +209,41 @@ public enum OpenStatus: String, Decodable, Sendable {
     case opened
 }
 
+/// 直前にオープンされたサイクルの中身。次のオープンまで手元で読める。
+public struct LastCycle: Decodable, Sendable {
+    /// 自分が書いた分。自分のものなので常に返る。
+    public let mine: [Kotozute]
+    /// 相手が書いた分。`canSeePartner == false` のときサーバーはこのキー自体を返さない。
+    public let partner: [Kotozute]
+
+    private enum CodingKeys: String, CodingKey {
+        case mine, partner
+    }
+
+    public init(mine: [Kotozute], partner: [Kotozute]) {
+        self.mine = mine
+        self.partner = partner
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        mine = try c.decodeIfPresent([Kotozute].self, forKey: .mine) ?? []
+        partner = try c.decodeIfPresent([Kotozute].self, forKey: .partner) ?? []
+    }
+}
+
 public struct ThisWeekResponse: Decodable, Sendable {
+    /// いま書いているサイクルの自分の分。
     public let myKotozute: [Kotozute]
     public let openStatus: OpenStatus
     public let canSeePartner: Bool
-    /// `canSeePartner == false` のときサーバーはこのキー自体を返さない（本文を持たせない）。
-    public let partnerKotozute: [Kotozute]
-    /// 0枚か1枚以上かのみ。枚数は返らない。
+    public let lastCycle: LastCycle
+    /// 相手がいま書いているサイクルに書いたか。0枚か1枚以上かのみで、枚数は返らない。
     public let partnerHasWritten: Bool
     public let nextOpenAt: WallClock?
 
     private enum CodingKeys: String, CodingKey {
-        case myKotozute, openStatus, canSeePartner, partnerKotozute, partnerHasWritten, nextOpenAt
+        case myKotozute, openStatus, canSeePartner, lastCycle, partnerHasWritten, nextOpenAt
     }
 
     /// プレビューやモックから組み立てるための初期化。
@@ -228,14 +251,14 @@ public struct ThisWeekResponse: Decodable, Sendable {
         myKotozute: [Kotozute],
         openStatus: OpenStatus,
         canSeePartner: Bool,
-        partnerKotozute: [Kotozute],
+        lastCycle: LastCycle,
         partnerHasWritten: Bool,
         nextOpenAt: WallClock?
     ) {
         self.myKotozute = myKotozute
         self.openStatus = openStatus
         self.canSeePartner = canSeePartner
-        self.partnerKotozute = partnerKotozute
+        self.lastCycle = lastCycle
         self.partnerHasWritten = partnerHasWritten
         self.nextOpenAt = nextOpenAt
     }
@@ -245,7 +268,8 @@ public struct ThisWeekResponse: Decodable, Sendable {
         myKotozute = try c.decode([Kotozute].self, forKey: .myKotozute)
         openStatus = try c.decode(OpenStatus.self, forKey: .openStatus)
         canSeePartner = try c.decode(Bool.self, forKey: .canSeePartner)
-        partnerKotozute = try c.decodeIfPresent([Kotozute].self, forKey: .partnerKotozute) ?? []
+        lastCycle = try c.decodeIfPresent(LastCycle.self, forKey: .lastCycle)
+            ?? LastCycle(mine: [], partner: [])
         partnerHasWritten = try c.decode(Bool.self, forKey: .partnerHasWritten)
         nextOpenAt = try WallClock.decodeOptional(from: c, forKey: .nextOpenAt)
     }
@@ -257,7 +281,7 @@ extension ThisWeekResponse {
         myKotozute: [],
         openStatus: .before,
         canSeePartner: false,
-        partnerKotozute: [],
+        lastCycle: LastCycle(mine: [], partner: []),
         partnerHasWritten: false,
         nextOpenAt: nil
     )

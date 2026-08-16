@@ -40,6 +40,9 @@ final class AuthStore {
         let arguments = ProcessInfo.processInfo.arguments
         if let index = arguments.firstIndex(of: "--signin"), index + 2 < arguments.count {
             await signIn(email: arguments[index + 1], password: arguments[index + 2])
+            // 失敗しても .checking のままだと画面がローディングから戻らない。
+            // サインイン画面に落として、errorMessage を見せる。
+            if phase == .checking { phase = .signedOut }
             return
         }
         #endif

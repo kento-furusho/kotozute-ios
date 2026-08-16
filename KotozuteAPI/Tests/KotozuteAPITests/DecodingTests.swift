@@ -23,7 +23,7 @@ final class DecodingTests: XCTestCase {
         let response = try await KotozuteClient.stubbed(transport: transport).thisWeek()
 
         XCTAssertFalse(response.canSeePartner)
-        XCTAssertTrue(response.partnerKotozute.isEmpty)
+        XCTAssertTrue(response.lastCycle.partner.isEmpty)
         XCTAssertTrue(response.partnerHasWritten)
     }
 

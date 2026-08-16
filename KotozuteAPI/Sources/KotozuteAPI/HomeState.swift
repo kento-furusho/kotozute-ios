@@ -6,7 +6,7 @@ import Foundation
 /// ここでやるのは「どの画面を出すか」への翻訳だけで、見せてよいかの判断を上書きしない。
 public struct HomeState: Sendable, Equatable {
     public enum Screen: Sendable, Equatable {
-        /// 自分が1枚以上書いていて、相手の分もオープン済み。相手のことづてを見せる。
+        /// 相手の分がオープン済みで、見せてよい状態。
         case partnerVisible([Kotozute])
         /// 自分は書いたが、まだオープン前。待ちの画面。
         case waitingForOpen
@@ -22,6 +22,10 @@ public struct HomeState: Sendable, Equatable {
     /// 枚数は持たない（サーバーも返さない）。
     public let showsPartnerPresence: Bool
 
+    /// 直前のサイクルに自分が書いた分。次のオープンまで手元で読める。
+    /// 自分のものなので、ロック中でも見せてよい。
+    public let lastCycleMine: [Kotozute]
+
     public let nextOpenAt: WallClock?
 
     public init(from response: ThisWeekResponse) {
@@ -31,7 +35,7 @@ public struct HomeState: Sendable, Equatable {
         // myKotozute が空でも canSeePartner が真になることがある。
         // 枚数から組み立て直すと、この人をロック画面に送ってしまう。
         if response.canSeePartner {
-            screen = .partnerVisible(response.partnerKotozute)
+            screen = .partnerVisible(response.lastCycle.partner)
         } else if response.openStatus == .opened {
             // 相手の分はそろっているが、自分がどちらのサイクルにも書いていない。
             screen = .lockedUntilIWrite
@@ -41,6 +45,7 @@ public struct HomeState: Sendable, Equatable {
             screen = .plainHome
         }
 
+        lastCycleMine = response.lastCycle.mine
         showsPartnerPresence = response.partnerHasWritten
         nextOpenAt = response.nextOpenAt
     }
