@@ -105,8 +105,8 @@ final class HomeStateTests: XCTestCase {
         }
     }
 
-    /// 本文を見せる枝はサーバーの canSeePartner に従う。
-    /// 自前の2軸判定が true でも、サーバーが false と言えば見せない。
+    /// 本文を見せるかはサーバーの canSeePartner に従う。
+    /// 自分の枚数から推論して上書きしない。
     func testServerDecisionWinsOverLocalInference() throws {
         let response = try makeResponse(
             myCount: 1, openStatus: .opened, canSeePartner: false,
@@ -114,9 +114,25 @@ final class HomeStateTests: XCTestCase {
         )
         let state = HomeState(from: response)
 
-        XCTAssertEqual(state.screen, .waitingForOpen)
+        XCTAssertEqual(state.screen, .lockedUntilIWrite)
         if case .partnerVisible = state.screen {
             XCTFail("サーバーが見せないと判断したのに本文を表示しようとしている")
         }
+    }
+
+    /// 前のサイクルに書いた人は、今のサイクルが0枚でも相手のことづてを見られる。
+    /// このとき myKotozute は空なので、枚数から推論するとロック画面に送ってしまう。
+    func testPartnerVisibleEvenWhenMyCurrentCycleIsEmpty() throws {
+        let response = try makeResponse(
+            myCount: 0, openStatus: .opened, canSeePartner: true,
+            partnerCount: 2, partnerHasWritten: false
+        )
+        let state = HomeState(from: response)
+
+        guard case let .partnerVisible(items) = state.screen else {
+            return XCTFail("partnerVisible を期待したが \(state.screen)")
+        }
+        XCTAssertEqual(items.count, 2)
+        XCTAssertTrue(response.myKotozute.isEmpty)
     }
 }

@@ -25,22 +25,19 @@ public struct HomeState: Sendable, Equatable {
     public let nextOpenAt: WallClock?
 
     public init(from response: ThisWeekResponse) {
-        let iHaveWritten = !response.myKotozute.isEmpty
-        let partnerOpened = response.openStatus == .opened
-
-        // 分岐は「自分が書いたか × 相手がオープン済みか」の2軸。
-        // 本文を見せる枝だけは、自前の判定ではなくサーバーの canSeePartner に従う。
-        switch (iHaveWritten, partnerOpened) {
-        case (true, true) where response.canSeePartner:
+        // 判断の起点はサーバーの canSeePartner。自分の枚数から推論しない。
+        //
+        // 「前のサイクルに書いた人は、今のサイクルが0枚でも読める」ため、
+        // myKotozute が空でも canSeePartner が真になることがある。
+        // 枚数から組み立て直すと、この人をロック画面に送ってしまう。
+        if response.canSeePartner {
             screen = .partnerVisible(response.partnerKotozute)
-        case (true, true):
-            // サーバーが見せないと判断した場合。本文は届いていないので待ち扱いにする。
-            screen = .waitingForOpen
-        case (true, false):
-            screen = .waitingForOpen
-        case (false, true):
+        } else if response.openStatus == .opened {
+            // 相手の分はそろっているが、自分がどちらのサイクルにも書いていない。
             screen = .lockedUntilIWrite
-        case (false, false):
+        } else if !response.myKotozute.isEmpty {
+            screen = .waitingForOpen
+        } else {
             screen = .plainHome
         }
 
