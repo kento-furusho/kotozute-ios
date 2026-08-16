@@ -27,7 +27,8 @@ struct HomeView: View {
                     // VStack は子に必要な幅しか取らないので、明示的に横いっぱいに広げる。
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(20)
-                    .padding(.bottom, 88)
+                    // 「書く」ボタンに最後の付箋が隠れないぶんの余白。
+                    .padding(.bottom, 104)
                 }
             }
             .navigationTitle("ことづて")

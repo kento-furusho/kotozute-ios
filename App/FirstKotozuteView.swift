@@ -42,9 +42,9 @@ struct FirstKotozuteView: View {
                     .focused($isFocused)
             }
             .frame(height: 200)
-            .background(Theme.stickyColor(at: 0))
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-            .shadow(color: .black.opacity(0.08), radius: 6, y: 3)
+            .background(Theme.stickyPaper(at: 0).gradient)
+            .clipShape(RoundedRectangle(cornerRadius: 3))
+            .shadow(color: Theme.ink.opacity(0.24), radius: 9, y: 7)
             .padding(.top, 28)
 
             Spacer()

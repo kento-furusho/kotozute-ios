@@ -51,16 +51,16 @@ struct WelcomeView: View {
     /// 何のアプリかを一目で伝えるための飾り。文言では説明しない。
     private var stickyPreview: some View {
         ZStack {
-            note(Theme.stickyColor(at: 2), rotation: -8, offset: CGSize(width: -54, height: 6))
-            note(Theme.stickyColor(at: 1), rotation: 6, offset: CGSize(width: 52, height: 12))
-            note(Theme.stickyColor(at: 0), rotation: -1, offset: .zero)
+            note(Theme.stickyPaper(at: 2), rotation: -8, offset: CGSize(width: -54, height: 6))
+            note(Theme.stickyPaper(at: 1), rotation: 6, offset: CGSize(width: 52, height: 12))
+            note(Theme.stickyPaper(at: 0), rotation: -1, offset: .zero)
         }
         .frame(height: 132)
     }
 
-    private func note(_ color: Color, rotation: Double, offset: CGSize) -> some View {
-        RoundedRectangle(cornerRadius: 6)
-            .fill(color)
+    private func note(_ paper: Theme.StickyPaper, rotation: Double, offset: CGSize) -> some View {
+        RoundedRectangle(cornerRadius: 3)
+            .fill(paper.gradient)
             .frame(width: 116, height: 116)
             .shadow(color: .black.opacity(0.08), radius: 6, y: 3)
             .rotationEffect(.degrees(rotation))

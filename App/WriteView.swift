@@ -37,7 +37,7 @@ struct WriteView: View {
                         .focused($isFocused)
                 }
                 .frame(height: 220)
-                .background(Theme.stickyColor(at: 0))
+                .background(Theme.stickyPaper(at: 0).gradient)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
                 .shadow(color: .black.opacity(0.08), radius: 6, y: 3)
                 .padding(20)

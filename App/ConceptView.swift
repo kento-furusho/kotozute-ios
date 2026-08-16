@@ -78,10 +78,10 @@ struct ConceptView: View {
             // 溜まっていく様子。
             VStack(spacing: -46) {
                 ForEach(0..<3, id: \.self) { i in
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(Theme.stickyColor(at: i))
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Theme.stickyPaper(at: i).gradient)
                         .frame(width: 150, height: 92)
-                        .shadow(color: .black.opacity(0.08), radius: 5, y: 3)
+                        .shadow(color: Theme.ink.opacity(0.22), radius: 7, y: 5)
                         .rotationEffect(.degrees(i.isMultiple(of: 2) ? -3 : 3))
                 }
             }
@@ -89,16 +89,16 @@ struct ConceptView: View {
         } else {
             // ふたりぶんが並ぶ様子。
             HStack(spacing: 14) {
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(Theme.stickyColor(at: 2))
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(Theme.stickyPaper(at: 2).gradient)
                     .frame(width: 116, height: 132)
                     .rotationEffect(.degrees(-4))
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(Theme.stickyColor(at: 0))
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(Theme.stickyPaper(at: 0).gradient)
                     .frame(width: 116, height: 132)
                     .rotationEffect(.degrees(4))
             }
-            .shadow(color: .black.opacity(0.08), radius: 5, y: 3)
+            .shadow(color: Theme.ink.opacity(0.22), radius: 7, y: 5)
             .frame(height: 150)
         }
     }
