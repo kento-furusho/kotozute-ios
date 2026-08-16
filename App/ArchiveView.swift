@@ -89,6 +89,8 @@ struct ArchiveView: View {
     @Bindable var store: ArchiveStore
     let partnerName: String
 
+    @State private var detail: KotozuteDetail?
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
@@ -110,7 +112,20 @@ struct ArchiveView: View {
                         .foregroundStyle(Theme.inkSoft)
                         .padding(.top, 8)
                 } else {
-                    StickyNoteList(items: store.items, colorOffset: store.whose == .me ? 0 : 2)
+                    StickyNoteList(
+                        items: store.items,
+                        colorOffset: store.whose == .me ? 0 : 2
+                    ) { tapped in
+                        detail = KotozuteDetail(
+                            items: store.items,
+                            startIndex: store.items.firstIndex(of: tapped) ?? 0,
+                            title: store.whose == .me ? "じぶんのことづて" : "\(partnerName)のことづて",
+                            colorOffset: store.whose == .me ? 0 : 2,
+                            // 過去分は確定済み。書き直せない。
+                            isEditable: false,
+                            showsReply: false
+                        )
+                    }
                 }
 
                 if store.isLoading {
@@ -129,6 +144,7 @@ struct ArchiveView: View {
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("アーカイブ")
         .navigationBarTitleDisplayMode(.inline)
+        .fullScreenCover(item: $detail) { KotozuteDetailView(detail: $0) }
         .task { if store.items.isEmpty { await store.reload() } }
     }
 

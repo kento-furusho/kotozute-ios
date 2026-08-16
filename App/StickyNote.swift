@@ -16,29 +16,31 @@ struct StickyNote: View {
     let tilt: Double
     /// テープの傾き。付箋と別にずらすと、貼った手つきに見える。
     var tapeTilt: Double = -1.5
+    /// 1枚ずつ読む画面用。文字も紙も大きくする。
+    var isLarge: Bool = false
 
     var body: some View {
         // 本文は上、日付は下端。デザイン案の space-between と同じ振り分け。
         // 余白が下にまとまらず、紙全体を使っているように見える。
         VStack(alignment: .leading, spacing: 10) {
             Text(kotozute.body)
-                .font(Theme.font(16))
+                .font(Theme.font(isLarge ? 20 : 16))
                 .foregroundStyle(Theme.ink)
-                .lineSpacing(5)
+                .lineSpacing(isLarge ? 8 : 5)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             Spacer(minLength: 8)
 
             Text(Self.dayFormatter.string(from: kotozute.createdAt))
-                .font(Theme.font(12))
+                .font(Theme.font(isLarge ? 13 : 12))
                 .foregroundStyle(Theme.ink.opacity(0.42))
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 20)
-        .padding(.bottom, 14)
+        .padding(.horizontal, isLarge ? 26 : 16)
+        .padding(.top, isLarge ? 32 : 20)
+        .padding(.bottom, isLarge ? 22 : 14)
         // 正方形に近い形が付箋らしさの大半を作る。ただし本文が長いときは伸びてよい
         // （切り詰めると読めなくなる。ことづては読ませるものなので隠さない）。
-        .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: isLarge ? 260 : 150, alignment: .topLeading)
         .background(paper.gradient)
         // 紙の厚みに見える縁。クリップの内側に入れる。
         .overlay(alignment: .top) {
@@ -50,7 +52,7 @@ struct StickyNote: View {
         .clipShape(RoundedRectangle(cornerRadius: 3))
         .shadow(color: Color(hex: 0x3A322C).opacity(0.28), radius: 9, x: 0, y: 7)
         // テープはクリップの外。付箋からはみ出して貼られている。
-        .overlay(alignment: .top) { tape.offset(y: -7) }
+        .overlay(alignment: .top) { tape.offset(y: isLarge ? -11 : -7) }
         .rotationEffect(.degrees(tilt))
     }
 
@@ -58,7 +60,7 @@ struct StickyNote: View {
     private var tape: some View {
         Rectangle()
             .fill(.white.opacity(0.62))
-            .frame(width: 46, height: 17)
+            .frame(width: isLarge ? 74 : 46, height: isLarge ? 26 : 17)
             .overlay(alignment: .leading) { tapeEdge }
             .overlay(alignment: .trailing) { tapeEdge }
             .shadow(color: .black.opacity(0.09), radius: 1, y: 1)

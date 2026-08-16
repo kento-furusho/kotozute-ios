@@ -8,6 +8,8 @@ struct HomeView: View {
     @Bindable var auth: AuthStore
     /// ロック画面から「書く」へ移るとき。タブの切り替えは親が持っている。
     var onWrite: () -> Void = {}
+    /// 1枚ずつ読む画面。一覧の付箋をタップすると開く。
+    @State private var detail: KotozuteDetail?
     /// 書き直し中のことづて。書くサイクルのものだけ開ける。
     @State private var editing: Kotozute?
     @State private var editError: String?
@@ -32,6 +34,13 @@ struct HomeView: View {
             .navigationBarTitleDisplayMode(.inline)
 
             .refreshable { await store.load() }
+            .fullScreenCover(item: $detail) { detail in
+                KotozuteDetailView(
+                    detail: detail,
+                    onReply: onWrite,
+                    onEdit: { editing = $0 }
+                )
+            }
             .sheet(item: $editing) { item in
                 WriteView(title: "書き直す", initialBody: item.body) { body in
                     Task { editError = await store.edit(id: item.id, body: body) }
@@ -52,7 +61,16 @@ struct HomeView: View {
         switch state.screen {
         case let .partnerVisible(items):
             section("\(store.partnerName)からのことづて") {
-                StickyNoteList(items: items, colorOffset: 2)
+                StickyNoteList(items: items, colorOffset: 2) { tapped in
+                    detail = KotozuteDetail(
+                        items: items,
+                        startIndex: items.firstIndex(of: tapped) ?? 0,
+                        title: "\(store.partnerName)からのことづて",
+                        colorOffset: 2,
+                        isEditable: false,
+                        showsReply: true
+                    )
+                }
             }
             lastCycleMineSection
             myKotozuteSection
@@ -78,7 +96,17 @@ struct HomeView: View {
     private var lastCycleMineSection: some View {
         if !state.lastCycleMine.isEmpty {
             section("じぶんのことづて") {
-                StickyNoteList(items: state.lastCycleMine, colorOffset: 4)
+                StickyNoteList(items: state.lastCycleMine, colorOffset: 4) { tapped in
+                    detail = KotozuteDetail(
+                        items: state.lastCycleMine,
+                        startIndex: state.lastCycleMine.firstIndex(of: tapped) ?? 0,
+                        title: "じぶんのことづて",
+                        colorOffset: 4,
+                        // オープン済みなので書き直せない。
+                        isEditable: false,
+                        showsReply: false
+                    )
+                }
             }
         }
     }
@@ -93,8 +121,17 @@ struct HomeView: View {
                     .foregroundStyle(Theme.inkSoft)
                     .padding(.vertical, 8)
             } else {
-                // 書くサイクルのものだけ書き直せる。オープン済みは確定扱い。
-                StickyNoteList(items: store.myKotozute) { editing = $0 }
+                // 開いて読み、そこから書き直せる。オープン済みは確定扱いなので対象外。
+                StickyNoteList(items: store.myKotozute) { tapped in
+                    detail = KotozuteDetail(
+                        items: store.myKotozute,
+                        startIndex: store.myKotozute.firstIndex(of: tapped) ?? 0,
+                        title: "今週のことづて",
+                        colorOffset: 0,
+                        isEditable: true,
+                        showsReply: false
+                    )
+                }
             }
         }
     }
