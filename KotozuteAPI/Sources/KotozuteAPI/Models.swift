@@ -251,6 +251,18 @@ public struct ThisWeekResponse: Decodable, Sendable {
     }
 }
 
+extension ThisWeekResponse {
+    /// 何も無い状態。読み込み前の画面を組むときの土台に使う。
+    public static let empty = ThisWeekResponse(
+        myKotozute: [],
+        openStatus: .before,
+        canSeePartner: false,
+        partnerKotozute: [],
+        partnerHasWritten: false,
+        nextOpenAt: nil
+    )
+}
+
 // MARK: - GET /kotozute/archive
 
 public enum ArchiveWhose: String, Sendable {

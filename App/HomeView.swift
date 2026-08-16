@@ -4,7 +4,8 @@ import SwiftUI
 /// ホーム。`GET /kotozute/this-week` の状態をそのまま画面に写す。
 /// 見せてよいかの判断はサーバー側で済んでいるので、ここでは出し分けだけを行う。
 struct HomeView: View {
-    @Bindable var store: DemoStore
+    @Bindable var store: KotozuteStore
+    @Bindable var auth: AuthStore
     @State private var isWriting = false
 
     var body: some View {
@@ -28,12 +29,12 @@ struct HomeView: View {
             .toolbar { demoMenu }
             .overlay(alignment: .bottom) { writeButton }
             .sheet(isPresented: $isWriting) {
-                WriteView { body in store.write(body) }
+                WriteView { body in Task { await store.write(body) } }
             }
         }
     }
 
-    private var state: HomeState { store.homeState }
+    private var state: HomeState { store.homeState ?? HomeState(from: .empty) }
 
     @ViewBuilder
     private var content: some View {
@@ -145,18 +146,15 @@ struct HomeView: View {
         .padding(.bottom, 12)
     }
 
-    /// 認証が繋がるまで状態を手で切り替えるための仮メニュー。実装が進んだら外す。
     private var demoMenu: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
-            Menu("デモ") {
-                Button("相手が書いた状態にする") { store.seedPartner() }
-                Button(store.partnerOpened ? "オープン前に戻す" : "オープン済みにする") {
-                    store.partnerOpened.toggle()
-                }
+            Menu {
+                Button("読み込み直す") { Task { await store.load() } }
                 Divider()
-                Button("最初から", role: .destructive) { store.reset() }
+                Button("サインアウト", role: .destructive) { Task { await auth.signOut() } }
+            } label: {
+                Image(systemName: "ellipsis")
             }
-            .font(Theme.font(15))
         }
     }
 

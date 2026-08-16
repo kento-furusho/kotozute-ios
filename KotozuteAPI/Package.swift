@@ -11,10 +11,26 @@ let package = Package(
         .macOS(.v14),
     ],
     products: [
-        .library(name: "KotozuteAPI", targets: ["KotozuteAPI"])
+        .library(name: "KotozuteAPI", targets: ["KotozuteAPI"]),
+        .library(name: "KotozuteAuth", targets: ["KotozuteAuth"]),
+    ],
+    dependencies: [
+        // Amplify は使わず素の AWS SDK を配線する方針（バックエンドと揃える）。
+        .package(url: "https://github.com/awslabs/aws-sdk-swift", from: "1.0.0")
     ],
     targets: [
+        // API 層は依存ゼロに保つ。Cognito を混ぜるとテストが重くなる。
         .target(name: "KotozuteAPI"),
         .testTarget(name: "KotozuteAPITests", dependencies: ["KotozuteAPI"]),
+
+        // 認証は別ターゲットに切り出し、API 層から Cognito を見えなくする。
+        .target(
+            name: "KotozuteAuth",
+            dependencies: [
+                "KotozuteAPI",
+                .product(name: "AWSCognitoIdentityProvider", package: "aws-sdk-swift"),
+            ]
+        ),
+        .testTarget(name: "KotozuteAuthTests", dependencies: ["KotozuteAuth"]),
     ]
 )

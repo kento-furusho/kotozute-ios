@@ -7,19 +7,27 @@
 ## 現在の構成
 
 ```
-Sources/KotozuteAPI/    API 層（UI から独立。シミュレータ無しでテストできる）
-  Models.swift          12エンドポイント分の Codable モデル
-  KotozuteClient.swift  API クライアント本体
-  HomeState.swift       相互ロックの画面分岐
-  WallClock.swift       nextOpenAt 専用の日時型
-  APIError.swift        HTTP ステータスの意味への翻訳
-Tests/KotozuteAPITests/ 21テスト
+KotozuteAPI/            Swift Package
+  Sources/KotozuteAPI/  API 層（依存ゼロ。シミュレータ無しでテストできる）
+  Sources/KotozuteAuth/ 認証層（Cognito。aws-sdk-swift に依存）
+  Tests/
+App/                    SwiftUI アプリ
+project.yml             XcodeGen の定義（.xcodeproj は生成物）
+scripts/build-sim.sh    ビルド〜シミュレータ起動
 ```
 
-アプリ本体（SwiftUI）は未着手。このパッケージを依存として取り込む形にする。
+API 層と認証層を分けているのは、API 層の依存をゼロに保つため。
+`swift test` が数秒で終わり、Cognito を持ち込まずにロジックを検証できる。
 
 ```bash
-swift test
+cd KotozuteAPI && swift test          # 通信しないテスト
+./scripts/build-sim.sh                # ビルドしてシミュレータで起動
+```
+
+実際の Cognito と API に繋ぐテストは既定で走らない。
+
+```bash
+cd KotozuteAPI && KOTOZUTE_E2E=1 swift test --filter CognitoIntegrationTests
 ```
 
 ## バックエンドの接続先
@@ -36,6 +44,21 @@ swift test
 これらは秘密情報ではない。iOS のような公開クライアントはシークレットを持てない
 （アプリに埋め込んだ値は逆コンパイルで取り出せる）ため、Cognito のクライアントも
 シークレット無しで作ってある。アクセス制御はトークンの検証で行う。
+
+## 認証
+
+Amplify は使わず、素の AWS SDK for Swift で `InitiateAuth` を直接叩く（バックエンドの方針に合わせている）。
+
+認証フローは **`USER_PASSWORD_AUTH`**。SDK に SRP のヘルパーが無く、SRP を使うには
+プロトコル自体（大きな整数の冪剰余・HKDF など）を自前で実装する必要があるため。
+パスワードは TLS 上で Cognito に送られる。SRP に差し替えるときは `CognitoAuthenticator`
+の中だけで閉じる。
+
+トークンは Keychain に置く。リフレッシュトークンは「持っていれば本人になりすませる」
+値なので、バックアップやファイル閲覧から平文で読めてはいけない。
+
+`CognitoAuthenticator` は `TokenProvider` に準拠しているので、`KotozuteClient` は
+トークンの出所が Cognito であることを知らない。
 
 ## 実装上の注意
 
