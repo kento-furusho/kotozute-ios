@@ -6,13 +6,9 @@ import SwiftUI
 struct HomeView: View {
     @Bindable var store: KotozuteStore
     @Bindable var auth: AuthStore
-    let archiveStore: ArchiveStore
-    @State private var isWriting = false
     /// 書き直し中のことづて。書くサイクルのものだけ開ける。
     @State private var editing: Kotozute?
     @State private var editError: String?
-    @State private var showsArchive = false
-    @State private var showsSettings = false
 
     var body: some View {
         NavigationStack {
@@ -27,37 +23,13 @@ struct HomeView: View {
                     // VStack は子に必要な幅しか取らないので、明示的に横いっぱいに広げる。
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(20)
-                    // 「書く」ボタンに最後の付箋が隠れないぶんの余白。
-                    .padding(.bottom, 104)
+                    .padding(.bottom, 24)
                 }
             }
             .navigationTitle("ことづて")
             .navigationBarTitleDisplayMode(.inline)
-            .navigationDestination(isPresented: $showsArchive) {
-                ArchiveView(store: archiveStore, partnerName: store.partnerName)
-            }
-            .navigationDestination(isPresented: $showsSettings) {
-                SettingsView(store: store, auth: auth)
-            }
-            .task {
-                #if DEBUG
-                // シミュレータでの確認用。メニューを開くタップの代わり。
-                //   xcrun simctl launch <udid> dev.kotozute.app --screen archive|settings
-                let arguments = ProcessInfo.processInfo.arguments
-                if let index = arguments.firstIndex(of: "--screen"), index + 1 < arguments.count {
-                    switch arguments[index + 1] {
-                    case "archive": showsArchive = true
-                    case "settings": showsSettings = true
-                    default: break
-                    }
-                }
-                #endif
-            }
-            .toolbar { menu }
-            .overlay(alignment: .bottom) { writeButton }
-            .sheet(isPresented: $isWriting) {
-                WriteView { body in Task { await store.write(body) } }
-            }
+
+            .refreshable { await store.load() }
             .sheet(item: $editing) { item in
                 WriteView(title: "書き直す", initialBody: item.body) { body in
                     Task { editError = await store.edit(id: item.id, body: body) }
@@ -179,36 +151,6 @@ struct HomeView: View {
         .overlay(
             RoundedRectangle(cornerRadius: 14).stroke(Theme.line, lineWidth: 1)
         )
-    }
-
-    private var writeButton: some View {
-        Button {
-            isWriting = true
-        } label: {
-            Text("書く")
-                .font(Theme.font(17, weight: .bold))
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(Theme.accent)
-                .clipShape(Capsule())
-                .shadow(color: Theme.accent.opacity(0.3), radius: 10, y: 4)
-        }
-        .padding(.horizontal, 24)
-        .padding(.bottom, 12)
-    }
-
-    private var menu: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            Menu {
-                Button("アーカイブ") { showsArchive = true }
-                Button("設定") { showsSettings = true }
-                Divider()
-                Button("読み込み直す") { Task { await store.load() } }
-            } label: {
-                Image(systemName: "ellipsis")
-            }
-        }
     }
 
     private static let openFormatter: DateFormatter = {

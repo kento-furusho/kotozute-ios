@@ -109,7 +109,7 @@ struct SignedInView: View {
                     InviteView(store: store, auth: auth, router: router)
                 }
             case .ready:
-                HomeView(store: store, auth: auth, archiveStore: archiveStore)
+                MainTabView(store: store, auth: auth, archiveStore: archiveStore)
             case let .failed(message):
                 errorView(message)
             }
