@@ -24,6 +24,8 @@ final class KotozuteStore {
     /// オープンの曜日（0=日〜6=土）と時刻（"HH:MM"）。設定画面で変える。
     private(set) var openDayOfWeek = 5
     private(set) var openTime = "20:00"
+    /// サイクルの区切り（古い順）。壁を週ごとにたどるのに使う。
+    private(set) var cycleStarts: [Date] = []
     private(set) var inviteToken: String?
     private(set) var isAccepting = false
     private(set) var acceptError: String?
@@ -62,6 +64,7 @@ final class KotozuteStore {
             timezone = TimeZone(identifier: pair.timezone) ?? timezone
             openDayOfWeek = pair.openDayOfWeek
             openTime = pair.openTime
+            cycleStarts = pair.cycleStarts
 
             // 3. 今週の状態。相互ロックの判定はここに入っている。
             let thisWeek = try await client.thisWeek()

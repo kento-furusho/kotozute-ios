@@ -139,6 +139,33 @@ public struct KotozuteClient: Sendable {
         try await send(.patch, "/kotozute/\(escape(id))", body: body)
     }
 
+    /// アーカイブを期間で引く。週ごとにたどる画面はこちらを使う。
+    /// `to` は含めない（次の週の始まりを渡す）。
+    public func archive(
+        whose: ArchiveWhose = .me,
+        from: Date,
+        to: Date,
+        limit: Int? = nil,
+        cursor: String? = nil
+    ) async throws -> ArchiveResponse {
+        var query = [
+            URLQueryItem(name: "whose", value: whose.rawValue),
+            URLQueryItem(name: "from", value: Self.timestamp(from)),
+            URLQueryItem(name: "to", value: Self.timestamp(to)),
+        ]
+        if let limit { query.append(URLQueryItem(name: "limit", value: String(limit))) }
+        if let cursor { query.append(URLQueryItem(name: "cursor", value: cursor)) }
+        return try await send(.get, "/kotozute/archive", query: query)
+    }
+
+    /// サーバーが期待する形（RFC3339・秒まで・UTC）。
+    /// ISO8601DateFormatter は Sendable ではないので、使い回さずその場で作る。
+    private static func timestamp(_ date: Date) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.string(from: date)
+    }
+
     /// アーカイブ。同じ月のなかでカーソルページングする。
     public func archive(
         whose: ArchiveWhose = .me,

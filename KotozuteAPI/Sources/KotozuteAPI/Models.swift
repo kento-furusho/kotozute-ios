@@ -121,9 +121,12 @@ public struct PairResponse: Decodable, Sendable {
     public let timezone: String
     public let status: String
     public let nextOpenAt: WallClock?
+    /// サイクルの区切り（古い順）。隣り合う2つが1つの週の範囲になる。
+    /// 末尾は「いま書いているサイクル」の開始。
+    public let cycleStarts: [Date]
 
     private enum CodingKeys: String, CodingKey {
-        case pairId, partner, openDayOfWeek, openTime, timezone, status, nextOpenAt
+        case pairId, partner, openDayOfWeek, openTime, timezone, status, nextOpenAt, cycleStarts
     }
 
     public init(from decoder: any Decoder) throws {
@@ -135,6 +138,7 @@ public struct PairResponse: Decodable, Sendable {
         timezone = try c.decode(String.self, forKey: .timezone)
         status = try c.decode(String.self, forKey: .status)
         nextOpenAt = try WallClock.decodeOptional(from: c, forKey: .nextOpenAt)
+        cycleStarts = try c.decodeIfPresent([Date].self, forKey: .cycleStarts) ?? []
     }
 }
 

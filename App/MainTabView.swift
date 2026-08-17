@@ -7,7 +7,7 @@ import SwiftUI
 struct MainTabView: View {
     @Bindable var store: KotozuteStore
     @Bindable var auth: AuthStore
-    let archiveStore: ArchiveStore
+    @Bindable var wall: WallStore
 
     /// 「見る」と「壁」はどちらもことづてを読む画面で違いが分かりにくかったので、
     /// 「見る」ひとつにまとめた（中身は上がいまのサイクル、下が壁）。
@@ -61,7 +61,7 @@ struct MainTabView: View {
             // 書いた分もこの画面に並ぶので、「見る」へ飛ばさずここに留まる。
             ComposeView(store: store)
         case .read:
-            ViewingView(store: store, archiveStore: archiveStore) { selection = .write }
+            ViewingView(store: store, wall: wall) { selection = .write }
         case .settings:
             SettingsView(store: store, auth: auth)
         }

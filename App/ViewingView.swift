@@ -1,22 +1,19 @@
 import KotozuteAPI
 import SwiftUI
 
-/// 「見る」タブ。読むものはすべてここに集める。
+/// 「見る」タブ。壁を週ごとにたどる。
 ///
-/// もともと「見る」と「壁」に分かれていたが、どちらもことづてを読む画面で
-/// 違いが分かりにくかったので、ひとつにまとめた。
+/// もともと「いまの週」と「月ごとの一覧」が別物として並んでいたが、
+/// 同じ壁を2通りの区切りで見せていて分かりにくかったので、週ひとつに揃えた。
 ///
-///   上：いまのサイクル（相互ロックの対象。this-week が返す分）
-///   下：壁（読み終えたサイクル。月ごとにたどる）
-///
-/// 上下を分けているのは扱いが違うから。上はロックがかかり、下はかからない。
+/// 週の区切りはオープン日。カレンダーの週ではない（オープン曜日を変えるとずれるため）。
+/// いちばん新しい週だけは相互ロックの対象なので、`this-week` の結果をそのまま使う。
 struct ViewingView: View {
     @Bindable var store: KotozuteStore
-    @Bindable var archiveStore: ArchiveStore
+    @Bindable var wall: WallStore
     /// ロックされているときに「書く」へ移る。
     var onWrite: () -> Void = {}
 
-    /// 全画面で出すもの。fullScreenCover を重ねると互いに潰し合うのでひとつにまとめる。
     private enum FullScreen: Identifiable {
         case reveal(RevealItems)
         case detail(KotozuteDetail)
@@ -30,7 +27,6 @@ struct ViewingView: View {
     }
 
     @State private var fullScreen: FullScreen?
-    /// 演出を出したサイクルの目印。相手の分の先頭 id をそのまま使う。
     @AppStorage("seenRevealKey") private var seenRevealKey = ""
 
     var body: some View {
@@ -39,12 +35,9 @@ struct ViewingView: View {
                 Theme.background.ignoresSafeArea()
 
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 28) {
-                        currentCycle
-
-                        Divider()
-
-                        wall
+                    VStack(alignment: .leading, spacing: 24) {
+                        weekStepper
+                        weekContent
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(20)
@@ -55,8 +48,10 @@ struct ViewingView: View {
             .navigationBarTitleDisplayMode(.inline)
             .refreshable {
                 await store.load()
-                await archiveStore.reload()
+                await wall.load()
             }
+            .onChange(of: store.cycleStarts) { _, starts in wall.setCycles(starts) }
+            .onAppear { wall.setCycles(store.cycleStarts) }
             .onChange(of: revealKey) { _, key in showRevealIfNeeded(key) }
             .onAppear { showRevealIfNeeded(revealKey) }
             .fullScreenCover(item: $fullScreen) { screen in
@@ -73,11 +68,70 @@ struct ViewingView: View {
     }
 
     private var state: HomeState { store.homeState ?? HomeState(from: .empty) }
+    /// いちばん新しい週を見ているか。ここだけ相互ロックがかかる。
+    private var isLatestWeek: Bool { wall.index == 0 }
 
-    // MARK: - いまのサイクル
+    // MARK: - 週の行き来
+
+    private var weekStepper: some View {
+        HStack {
+            Button {
+                Task { await wall.showOlder() }
+            } label: {
+                Image(systemName: "chevron.left")
+            }
+            .disabled(!wall.hasOlder)
+            .opacity(wall.hasOlder ? 1 : 0.25)
+
+            Spacer()
+
+            VStack(spacing: 2) {
+                Text(weekTitle)
+                    .font(Theme.font(17, weight: .bold))
+                    .foregroundStyle(Theme.ink)
+                if let week = wall.current {
+                    Text(Self.range(of: week, in: store.timezone))
+                        .font(Theme.font(11))
+                        .foregroundStyle(Theme.inkSoft)
+                }
+            }
+
+            Spacer()
+
+            Button {
+                Task { await wall.showNewer() }
+            } label: {
+                Image(systemName: "chevron.right")
+            }
+            .disabled(!wall.hasNewer)
+            .opacity(wall.hasNewer ? 1 : 0.25)
+        }
+        .foregroundStyle(Theme.inkSoft)
+    }
+
+    private var weekTitle: String {
+        guard let week = wall.current else { return "今週" }
+        switch week.index {
+        case 0: return "今週"
+        case 1: return "先週"
+        default: return "\(week.index)週前"
+        }
+    }
+
+    // MARK: - 中身
 
     @ViewBuilder
-    private var currentCycle: some View {
+    private var weekContent: some View {
+        if isLatestWeek {
+            latestWeek
+        } else {
+            pastWeek
+        }
+    }
+
+    /// いちばん新しい週。相互ロックの対象なので this-week の結果を使う。
+    @ViewBuilder
+    private var latestWeek: some View {
         switch state.screen {
         case let .partnerVisible(items):
             section("\(store.partnerName)からのことづて") {
@@ -85,27 +139,59 @@ struct ViewingView: View {
                     fullScreen = .detail(partnerDetail(items, startingAt: tapped))
                 }
             }
-            lastCycleMineSection
-
-        case .waitingForOpen, .plainHome:
-            countdownCard
-            lastCycleMineSection
+            mineSection(state.lastCycleMine)
 
         case .lockedUntilIWrite:
             lockedCard
-            lastCycleMineSection
+            mineSection(state.lastCycleMine)
+
+        case .waitingForOpen, .plainHome:
+            countdownCard
+            mineSection(state.lastCycleMine)
         }
     }
 
-    /// 直前のサイクルに自分が書いた分。次のオープンまでここで読める。
+    /// 過去の週。オープン済みなので、ふたりぶんそのまま出す。
     @ViewBuilder
-    private var lastCycleMineSection: some View {
-        if !state.lastCycleMine.isEmpty {
+    private var pastWeek: some View {
+        if wall.isLoading {
+            ProgressView().frame(maxWidth: .infinity).padding(.top, 40)
+        } else if let message = wall.errorMessage {
+            Text(message)
+                .font(Theme.font(15))
+                .foregroundStyle(Theme.inkSoft)
+        } else if wall.mine.isEmpty, wall.partner.isEmpty {
+            Text("この週のことづては無い。")
+                .font(Theme.font(15))
+                .foregroundStyle(Theme.inkSoft)
+                .padding(.top, 8)
+        } else {
+            if !wall.partner.isEmpty {
+                section("\(store.partnerName)からのことづて") {
+                    StickyNoteList(items: wall.partner, colorOffset: 2) { tapped in
+                        fullScreen = .detail(KotozuteDetail(
+                            items: wall.partner,
+                            startIndex: wall.partner.firstIndex(of: tapped) ?? 0,
+                            title: "\(store.partnerName)からのことづて",
+                            colorOffset: 2,
+                            isEditable: false,
+                            showsReply: false
+                        ))
+                    }
+                }
+            }
+            mineSection(wall.mine)
+        }
+    }
+
+    @ViewBuilder
+    private func mineSection(_ items: [Kotozute]) -> some View {
+        if !items.isEmpty {
             section("じぶんのことづて") {
-                StickyNoteList(items: state.lastCycleMine, colorOffset: 4) { tapped in
+                StickyNoteList(items: items, colorOffset: 4) { tapped in
                     fullScreen = .detail(KotozuteDetail(
-                        items: state.lastCycleMine,
-                        startIndex: state.lastCycleMine.firstIndex(of: tapped) ?? 0,
+                        items: items,
+                        startIndex: items.firstIndex(of: tapped) ?? 0,
                         title: "じぶんのことづて",
                         colorOffset: 4,
                         isEditable: false,
@@ -114,32 +200,6 @@ struct ViewingView: View {
                 }
             }
         }
-    }
-
-    // MARK: - 壁
-
-    private var wall: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            Text("壁")
-                .font(Theme.font(20, weight: .bold))
-                .foregroundStyle(Theme.ink)
-
-            Text("読み終えたことづて。月ごとにたどれる。")
-                .font(Theme.font(13))
-                .foregroundStyle(Theme.inkSoft)
-
-            ArchiveBrowser(store: archiveStore, partnerName: store.partnerName) { items, tapped in
-                fullScreen = .detail(KotozuteDetail(
-                    items: items,
-                    startIndex: items.firstIndex(of: tapped) ?? 0,
-                    title: archiveStore.whose == .me ? "じぶんのことづて" : "\(store.partnerName)のことづて",
-                    colorOffset: archiveStore.whose == .me ? 0 : 2,
-                    isEditable: false,
-                    showsReply: false
-                ))
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - 部品
@@ -167,7 +227,6 @@ struct ViewingView: View {
         fullScreen = .reveal(RevealItems(items: items))
     }
 
-    /// 次のオープンまで。急かす表示ではなく、待つ時間そのものを見せる。
     @ViewBuilder
     private var countdownCard: some View {
         if let nextOpenAt = state.nextOpenAt,
@@ -196,7 +255,6 @@ struct ViewingView: View {
         }
     }
 
-    /// 相手の分はそろっているが、自分がまだ書いていない状態。
     /// 罰ではなく交換なので、急かす言い方にしない。
     private var lockedCard: some View {
         infoCard {
@@ -243,6 +301,17 @@ struct ViewingView: View {
             .background(.white.opacity(0.7))
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line, lineWidth: 1))
+    }
+
+    /// 週の範囲。「8/9 – 8/16」のように出す。
+    private static func range(of week: Week, in timezone: TimeZone) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = timezone
+        formatter.dateFormat = "M/d"
+        // 終わりは次のオープン時刻そのもの。表示は1日前にせず、そのまま出す。
+        return "\(formatter.string(from: week.start)) – \(formatter.string(from: week.end))"
     }
 
     private static func openLabel(for date: Date, in timezone: TimeZone) -> String {
