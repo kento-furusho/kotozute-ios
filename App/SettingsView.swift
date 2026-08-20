@@ -12,12 +12,28 @@ struct SettingsView: View {
     @State private var isSaving = false
     @State private var message: String?
     private var push: PushStore { PushStore.shared }
+    @State private var name = ""
+    @State private var isSavingName = false
+    @State private var nameMessage: String?
 
     private static let weekdays = ["日", "月", "火", "水", "木", "金", "土"]
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
+                Text("なまえ")
+                    .font(Theme.font(18, weight: .bold))
+                    .foregroundStyle(Theme.ink)
+
+                Text("あいての画面に、この名前で出る。")
+                    .font(Theme.font(14))
+                    .foregroundStyle(Theme.inkSoft)
+                    .padding(.top, 6)
+
+                displayName
+
+                Divider().padding(.vertical, 28)
+
                 Text("オープンの日")
                     .font(Theme.font(18, weight: .bold))
                     .foregroundStyle(Theme.ink)
@@ -132,7 +148,9 @@ struct SettingsView: View {
         .navigationTitle("設定")
         .navigationBarTitleDisplayMode(.inline)
         .task { await push.refresh() }
+        .onChange(of: store.myName) { _, newName in name = newName }
         .onAppear {
+            name = store.myName
             dayOfWeek = store.openDayOfWeek
             let parts = store.openTime.split(separator: ":")
             hour = parts.count == 2 ? Int(parts[0]) ?? 20 : 20
@@ -176,6 +194,52 @@ struct SettingsView: View {
         }
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// 表示名。空のまま保存はできない（サーバーも 400 で弾く）。
+    private var displayName: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            TextField("なまえ", text: $name)
+                .font(Theme.font(17))
+                .foregroundStyle(Theme.ink)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .background(.white.opacity(0.7))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.line, lineWidth: 1))
+
+            if let nameMessage {
+                Text(nameMessage)
+                    .font(Theme.font(13))
+                    .foregroundStyle(Theme.inkSoft)
+            }
+
+            Button {
+                Task {
+                    isSavingName = true
+                    nameMessage = await store.updateDisplayName(name) ?? "変えた。"
+                    isSavingName = false
+                }
+            } label: {
+                Text(isSavingName ? "保存中…" : "この名前にする")
+                    .font(Theme.font(15, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 13)
+                    .background(canSaveName ? Theme.accent : Theme.inkSoft.opacity(0.4))
+                    .clipShape(Capsule())
+            }
+            .disabled(!canSaveName || isSavingName)
+        }
+        .padding(.top, 16)
+    }
+
+    /// 変わっていないのに送らない。空も送らない。
+    private var canSaveName: Bool {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !trimmed.isEmpty && trimmed != store.myName
     }
 
     /// 変更が無いのに送らない。

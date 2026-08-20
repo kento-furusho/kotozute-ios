@@ -19,6 +19,8 @@ final class KotozuteStore {
     private(set) var phase: Phase = .loading
     private(set) var myKotozute: [Kotozute] = []
     private(set) var homeState: HomeState?
+    /// 自分の表示名。相手の画面では「◯◯からのことづて」の◯◯になる。
+    private(set) var myName = ""
     private(set) var partnerName = ""
     private(set) var timezone = TimeZone(identifier: "Asia/Tokyo") ?? .current
     /// オープンの曜日（0=日〜6=土）と時刻（"HH:MM"）。設定画面で変える。
@@ -56,6 +58,8 @@ final class KotozuteStore {
                 return
             }
 
+            myName = me.displayName
+
             guard me.pairStatus == .paired else {
                 phase = .noPair
                 return
@@ -92,6 +96,24 @@ final class KotozuteStore {
             sentPushToken = token
         } catch {
             print("端末トークンを送れなかった: \(error)")
+        }
+    }
+
+    /// 表示名を変える。エラー文言を返す（nil なら成功）。
+    ///
+    /// 空や長すぎる名前はサーバーが 400 で弾く。ここでも空だけは先に見て、
+    /// 押しても何も起きないボタンにしない。
+    func updateDisplayName(_ name: String) async -> String? {
+        guard let client else { return nil }
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "なまえを入れてほしい。" }
+        guard trimmed != myName else { return nil }
+        do {
+            _ = try await client.updateMe(UpdateMeRequest(displayName: trimmed))
+            myName = trimmed
+            return nil
+        } catch {
+            return Self.message(for: error)
         }
     }
 
