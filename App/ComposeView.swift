@@ -128,7 +128,7 @@ struct ComposeView: View {
                         title: "今週のことづて",
                         colorOffset: 0,
                         isEditable: true,
-                        showsReply: false
+                        showsCompose: false
                     )
                 }
             }

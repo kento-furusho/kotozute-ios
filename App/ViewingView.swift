@@ -61,7 +61,7 @@ struct ViewingView: View {
                         fullScreen = .detail(partnerDetail(wrapped.items))
                     }
                 case let .detail(detail):
-                    KotozuteDetailView(detail: detail, onReply: onWrite)
+                    KotozuteDetailView(detail: detail, onCompose: onWrite)
                 }
             }
         }
@@ -175,7 +175,7 @@ struct ViewingView: View {
                             title: "\(store.partnerName)からのことづて",
                             colorOffset: 2,
                             isEditable: false,
-                            showsReply: false
+                            showsCompose: false
                         ))
                     }
                 }
@@ -195,7 +195,7 @@ struct ViewingView: View {
                         title: "じぶんのことづて",
                         colorOffset: 4,
                         isEditable: false,
-                        showsReply: false
+                        showsCompose: false
                     ))
                 }
             }
@@ -211,7 +211,7 @@ struct ViewingView: View {
             title: "\(store.partnerName)からのことづて",
             colorOffset: 2,
             isEditable: false,
-            showsReply: true
+            showsCompose: true
         )
     }
 
