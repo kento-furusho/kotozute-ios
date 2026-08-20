@@ -209,6 +209,8 @@ struct InviteView: View {
                     .lineSpacing(4)
                     .padding(.top, 10)
 
+                firstNote
+
                 if let token = store.inviteToken {
                     ShareLink(item: Self.message(token: token)) {
                         Text("リンクを送る")
@@ -249,8 +251,8 @@ struct InviteView: View {
                     .multilineTextAlignment(.center)
                     .padding(.top, 36)
 
-                if !store.myKotozute.isEmpty {
-                    StickyNoteList(items: store.myKotozute)
+                if store.myKotozute.count > 1 {
+                    StickyNoteList(items: Array(store.myKotozute.dropFirst()))
                         .padding(.top, 8)
                 }
 
@@ -302,6 +304,24 @@ struct InviteView: View {
         }
         .task {
             if store.inviteToken == nil { await store.createInvite() }
+        }
+    }
+
+    /// もう書いてある1枚目。「送れば、これがふたりの壁になる」を目に見える形にする。
+    /// デザイン案（初回導線B ⑤）はここに1枚目を置いている。
+    @ViewBuilder
+    private var firstNote: some View {
+        // createdAt で決める。配列の順序に頼ると、並びが変わったとき静かにずれる。
+        if let first = store.myKotozute.min(by: { $0.createdAt < $1.createdAt }) {
+            VStack(spacing: 10) {
+                Text("1枚目のことづて")
+                    .font(Theme.font(12, weight: .medium))
+                    .foregroundStyle(Theme.inkSoft)
+
+                StickyNote(kotozute: first, paper: Theme.stickyPaper(at: 0), tilt: -2)
+                    .frame(width: 208)
+            }
+            .padding(.top, 28)
         }
     }
 
