@@ -90,7 +90,7 @@ struct ViewingView: View {
                     .font(Theme.font(17, weight: .bold))
                     .foregroundStyle(Theme.ink)
                 if let week = wall.current {
-                    Text(Self.range(of: week, in: store.timezone))
+                    Text(OpenSchedule.range(from: week.start, to: week.end, in: store.timezone))
                         .font(Theme.font(11))
                         .foregroundStyle(Theme.inkSoft)
                 }
@@ -232,16 +232,16 @@ struct ViewingView: View {
         if let nextOpenAt = state.nextOpenAt,
            let date = nextOpenAt.date(in: store.timezone) {
             infoCard {
-                Text(Self.openLabel(for: date, in: store.timezone))
+                Text(OpenSchedule.weekdayLabel(for: date, in: store.timezone))
                     .font(.system(size: 11, weight: .heavy, design: .rounded))
                     .tracking(1.5)
                     .foregroundStyle(Theme.accent)
 
-                Text(Self.remaining(until: date, in: store.timezone))
+                Text(OpenSchedule.remaining(until: date, in: store.timezone))
                     .font(Theme.font(22, weight: .bold))
                     .foregroundStyle(Theme.ink)
 
-                Text("\(Self.openFormatter.string(from: date))にオープン。")
+                Text("\(OpenSchedule.dateTime(date, in: store.timezone))にオープン。")
                     .font(Theme.font(13))
                     .foregroundStyle(Theme.inkSoft)
 
@@ -303,41 +303,4 @@ struct ViewingView: View {
             .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line, lineWidth: 1))
     }
 
-    /// 週の範囲。「8/9 – 8/16」のように出す。
-    private static func range(of week: Week, in timezone: TimeZone) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ja_JP")
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.timeZone = timezone
-        formatter.dateFormat = "M/d"
-        // 終わりは次のオープン時刻そのもの。表示は1日前にせず、そのまま出す。
-        return "\(formatter.string(from: week.start)) – \(formatter.string(from: week.end))"
-    }
-
-    private static func openLabel(for date: Date, in timezone: TimeZone) -> String {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = timezone
-        let names = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"]
-        let weekday = calendar.component(.weekday, from: date) - 1
-        return "\(names[max(0, min(6, weekday))]) OPEN"
-    }
-
-    private static func remaining(until date: Date, in timezone: TimeZone) -> String {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = timezone
-        let days = calendar.dateComponents(
-            [.day],
-            from: calendar.startOfDay(for: Date()),
-            to: calendar.startOfDay(for: date)
-        ).day ?? 0
-        return days <= 0 ? "今日オープン" : "オープンまで あと\(days)日"
-    }
-
-    private static let openFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ja_JP")
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.dateFormat = "M月d日(E) HH:mm"
-        return formatter
-    }()
 }
