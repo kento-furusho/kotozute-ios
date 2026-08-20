@@ -60,6 +60,24 @@ Amplify は使わず、素の AWS SDK for Swift で `InitiateAuth` を直接叩�
 `CognitoAuthenticator` は `TokenProvider` に準拠しているので、`KotozuteClient` は
 トークンの出所が Cognito であることを知らない。
 
+## 通知（APNs）
+
+オープンの日に通知を出すための配線。**まだ実際には飛ばない**。
+
+- 許可は「ペアが成立して本体に入った1回目」に尋ねる。断られても催促はせず、
+  設定画面から iPhone の設定へ案内するだけにする。
+- 端末トークンは `UIApplicationDelegate`（`PushAppDelegate`）でしか受け取れないので、
+  `@UIApplicationDelegateAdaptor` で SwiftUI の App に相乗りさせている。
+- 受け取ったトークンは `PATCH /me` の `apnsToken` で送る。サーバーはこれを
+  SNS のエンドポイントに変えて `snsEndpointArn` に保存し、週一バッチがそこへ Publish する。
+- トークンはサインインより先に降ってくることがあるので、`PushStore` は受け取って
+  持っておくだけにして、送信は `KotozuteStore.syncPushToken()` が引き受ける。
+  同じトークンは送らない。失敗しても画面には出さない（次に開いたときに送り直せる）。
+
+**残り**：Apple Developer で APNs の認証キーを発行し、SNS のプラットフォーム
+アプリケーションを作る。そのARNをバックエンドに渡すまでは、サーバーは
+`apnsToken` を保存するだけで端末の登録をしない。実機でないと本物のトークンは得られない。
+
 ## 実装上の注意
 
 ### 日時が2種類ある

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// 設定。いまはオープンの曜日・時刻とサインアウトだけ。
 struct SettingsView: View {
@@ -10,6 +11,7 @@ struct SettingsView: View {
     @State private var minute = 0
     @State private var isSaving = false
     @State private var message: String?
+    private var push: PushStore { PushStore.shared }
 
     private static let weekdays = ["日", "月", "火", "水", "木", "金", "土"]
 
@@ -91,6 +93,14 @@ struct SettingsView: View {
 
                 Divider().padding(.vertical, 28)
 
+                Text("お知らせ")
+                    .font(Theme.font(18, weight: .bold))
+                    .foregroundStyle(Theme.ink)
+
+                notifications
+
+                Divider().padding(.vertical, 28)
+
                 Text("ペア")
                     .font(Theme.font(18, weight: .bold))
                     .foregroundStyle(Theme.ink)
@@ -121,12 +131,51 @@ struct SettingsView: View {
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("設定")
         .navigationBarTitleDisplayMode(.inline)
+        .task { await push.refresh() }
         .onAppear {
             dayOfWeek = store.openDayOfWeek
             let parts = store.openTime.split(separator: ":")
             hour = parts.count == 2 ? Int(parts[0]) ?? 20 : 20
             minute = parts.count == 2 ? Int(parts[1]) ?? 0 : 0
         }
+    }
+
+    /// オープンの通知。断られていても催促にはしない。
+    @ViewBuilder
+    private var notifications: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if push.isAuthorized {
+                Text("オープンの日に、お知らせが届く。")
+                    .font(Theme.font(15))
+                    .foregroundStyle(Theme.ink)
+            } else if push.hasAsked {
+                // 2度目からは OS がダイアログを出さないので、設定アプリへ送る。
+                Text("お知らせは切ってある。")
+                    .font(Theme.font(15))
+                    .foregroundStyle(Theme.ink)
+                Button("iPhone の設定を開く") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                .font(Theme.font(15))
+                .foregroundStyle(Theme.accent)
+            } else {
+                Text("オープンの日にお知らせを受け取る。")
+                    .font(Theme.font(15))
+                    .foregroundStyle(Theme.ink)
+                Button("お知らせを受け取る") {
+                    Task {
+                        await push.requestAuthorization()
+                        await store.syncPushToken(push.deviceToken)
+                    }
+                }
+                .font(Theme.font(15))
+                .foregroundStyle(Theme.accent)
+            }
+        }
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// 変更が無いのに送らない。

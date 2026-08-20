@@ -42,6 +42,8 @@ targets:
         CFBundleURLTypes:
           - CFBundleURLName: dev.kotozute.app.invite
             CFBundleURLSchemes: [kotozute]
+    entitlements:
+      path: App/Kotozute.entitlements
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.kotozute.app
