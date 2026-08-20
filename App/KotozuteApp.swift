@@ -10,10 +10,33 @@ struct KotozuteApp: App {
     /// 招待は未サインインでも扱うので、認証の外側に置く。
     @State private var router = InviteRouter()
 
+    /// シミュレータでの確認用。オンボーディングは通常サインアウトしないと見られない。
+    ///   xcrun simctl launch <udid> dev.kotozute.app --screen welcome|concept
+    @ViewBuilder
+    private static var previewScreen: (some View)? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        if let index = arguments.firstIndex(of: "--screen"), index + 1 < arguments.count {
+            switch arguments[index + 1] {
+            case "welcome": WelcomeView(onStart: {}, onSignIn: {})
+            case "concept": ConceptView(onDone: {})
+            case "exchange": ConceptView(onDone: {}, startPage: 1)
+            default: nil as EmptyView?
+            }
+        } else {
+            nil as EmptyView?
+        }
+        #else
+        nil as EmptyView?
+        #endif
+    }
+
     var body: some Scene {
         WindowGroup {
             Group {
-                if let auth {
+                if let screen = Self.previewScreen {
+                    screen
+                } else if let auth {
                     RootView(auth: auth, router: router)
                 } else if let setupError {
                     Text(setupError)

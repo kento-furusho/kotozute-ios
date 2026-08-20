@@ -4,6 +4,8 @@ import SwiftUI
 /// 惹きつけ（なぜ良いか）は WelcomeView が済ませているので繰り返さない。
 struct ConceptView: View {
     let onDone: () -> Void
+    /// 確認用に途中のページから開けるようにしている。通常は 0。
+    var startPage = 0
 
     @State private var page = 0
 
@@ -14,12 +16,12 @@ struct ConceptView: View {
 
     private let pages = [
         Page(
-            title: "書きためる",
-            body: "思ったときに書く。\n頻度の縛りはない。"
+            title: "週に一度のオープン",
+            body: "書いたことづては、その日まで貼ったまま。\n決まった曜日に、その週ぶんがまとまる。"
         ),
         Page(
-            title: "週に一度、オープン",
-            body: "決まった日に、ふたりのことづてがまとまる。\nじぶんが書いていると、相手の分も見られる。"
+            title: "ことづての交換",
+            body: "じぶんが書くと、あいてのことづても見られる。\n書かない週は、静かに待つだけでいい。"
         ),
     ]
 
@@ -40,7 +42,6 @@ struct ConceptView: View {
                             .multilineTextAlignment(.center)
                             .lineSpacing(6)
                             .padding(.top, 14)
-                        Spacer()
                         Spacer()
                     }
                     .padding(.horizontal, 28)
@@ -70,36 +71,19 @@ struct ConceptView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.background.ignoresSafeArea())
+        .onAppear { page = startPage }
     }
 
     @ViewBuilder
     private func illustration(for index: Int) -> some View {
+        // デザイン案（初回導線A ③-1・③-2）に合わせて、抽象図形ではなく
+        // 「1週間の帯」と「交換の図」を出す。どちらも仕組みの説明を絵で肩代わりする。
         if index == 0 {
-            // 溜まっていく様子。
-            VStack(spacing: -46) {
-                ForEach(0..<3, id: \.self) { i in
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Theme.stickyPaper(at: i).gradient)
-                        .frame(width: 150, height: 92)
-                        .shadow(color: Theme.ink.opacity(0.22), radius: 7, y: 5)
-                        .rotationEffect(.degrees(i.isMultiple(of: 2) ? -3 : 3))
-                }
-            }
-            .frame(height: 150)
+            WeekStrip()
+                .frame(height: 150)
         } else {
-            // ふたりぶんが並ぶ様子。
-            HStack(spacing: 14) {
-                RoundedRectangle(cornerRadius: 3)
-                    .fill(Theme.stickyPaper(at: 2).gradient)
-                    .frame(width: 116, height: 132)
-                    .rotationEffect(.degrees(-4))
-                RoundedRectangle(cornerRadius: 3)
-                    .fill(Theme.stickyPaper(at: 0).gradient)
-                    .frame(width: 116, height: 132)
-                    .rotationEffect(.degrees(4))
-            }
-            .shadow(color: Theme.ink.opacity(0.22), radius: 7, y: 5)
-            .frame(height: 150)
+            ExchangeDiagram()
+                .frame(height: 150)
         }
     }
 }
