@@ -3,7 +3,7 @@ import SwiftUI
 /// ペア成立後の本体。デザイン案のフッター4タブ（書く／見る／壁／設定）。
 ///
 /// アイコンは SF Symbols ではなく、デザイン案と同じ素の図形で作っている
-/// （付箋・丸・四角）。記号を借りるより、モノの見た目と揃うほうを取った。
+/// （付箋・格子・スライダー）。記号を借りるより、モノの見た目と揃うほうを取った。
 struct MainTabView: View {
     @Bindable var store: KotozuteStore
     @Bindable var auth: AuthStore
@@ -106,16 +106,54 @@ struct MainTabView: View {
                 .fill(Theme.stickyPaper(at: 0).gradient)
                 .rotationEffect(.degrees(-6))
         case .read:
-            Circle()
-                .stroke(tint, lineWidth: 2)
-                .overlay {
-                    if selection == tab {
-                        Circle().fill(tint).padding(5)
+            // 壁に付箋が並んでいるところ。中身が壁なので、それをそのまま図にする。
+            wallIcon(tint: tint, filled: selection == tab)
+        case .settings:
+            // 丸だと「見る」と見分けがつかなかったので、形の違うつまみにした。
+            sliderIcon(tint: tint)
+        }
+    }
+
+    /// 2×2 に並んだ付箋。選んでいるときは塗り、ふだんは線だけ。
+    private func wallIcon(tint: Color, filled: Bool) -> some View {
+        GeometryReader { geometry in
+            let gap: CGFloat = 2.5
+            let side = (geometry.size.width - gap) / 2
+            VStack(spacing: gap) {
+                ForEach(0..<2, id: \.self) { _ in
+                    HStack(spacing: gap) {
+                        ForEach(0..<2, id: \.self) { _ in
+                            RoundedRectangle(cornerRadius: 1.5)
+                                .strokeBorder(tint, lineWidth: filled ? side / 2 : 1.8)
+                                .frame(width: side, height: side)
+                        }
                     }
                 }
-        case .settings:
-            Circle()
-                .stroke(tint, lineWidth: 2)
+            }
+        }
+    }
+
+    /// つまみの位置をずらした3本のスライダー。
+    private func sliderIcon(tint: Color) -> some View {
+        GeometryReader { geometry in
+            let width = geometry.size.width
+            // 上から順に、つまみを左寄り・右寄り・中ほどに置く。
+            let knobs: [CGFloat] = [0.3, 0.68, 0.45]
+            VStack(spacing: 0) {
+                ForEach(Array(knobs.enumerated()), id: \.offset) { _, position in
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(tint)
+                            .frame(height: 1.8)
+                        Circle()
+                            .fill(Theme.background)
+                            .overlay(Circle().strokeBorder(tint, lineWidth: 1.8))
+                            .frame(width: 5.5, height: 5.5)
+                            .offset(x: (width - 5.5) * position)
+                    }
+                    .frame(maxHeight: .infinity)
+                }
+            }
         }
     }
 }
