@@ -7,7 +7,7 @@ import SwiftUI
 ///   - 大きな付箋を1枚だけ出す
 ///   - 左右スワイプで次のことづてへ
 ///   - 枚数インジケータ（何枚あるかは、開いた本人には見えていい）
-///   - 相手の分には「お返しに書く」、自分の分には「書き直す」
+///   - 相手の分には「今週分のことづてを書く」、自分の分には「書き直す」
 struct KotozuteDetail: Identifiable {
     let id = UUID()
     let items: [Kotozute]
@@ -16,14 +16,18 @@ struct KotozuteDetail: Identifiable {
     let colorOffset: Int
     /// 自分が書くサイクルに書いた分だけ書き直せる。
     let isEditable: Bool
-    /// 相手の分を読んでいるとき。お返しに書く導線を出す。
-    let showsReply: Bool
+    /// 相手の分を読んでいるとき。書く画面への導線を出す。
+    ///
+    /// ここで書いたものは「読んでいることづてへの返事」ではない。
+    /// 読んでいるのは閉じたサイクルの分で、いま書いたものは書くサイクルに入り、
+    /// 相手が読めるのは次のオープン。紐付けはデータにも無い。
+    let showsCompose: Bool
 }
 
 struct KotozuteDetailView: View {
     let detail: KotozuteDetail
-    /// 「お返しに書く」。閉じてから書く画面へ。
-    let onReply: () -> Void
+    /// 「今週分のことづてを書く」。閉じてから書く画面へ。
+    let onCompose: () -> Void
     /// 「書き直す」。対象のことづてを渡す。
     let onEdit: (Kotozute) -> Void
 
@@ -32,11 +36,11 @@ struct KotozuteDetailView: View {
 
     init(
         detail: KotozuteDetail,
-        onReply: @escaping () -> Void = {},
+        onCompose: @escaping () -> Void = {},
         onEdit: @escaping (Kotozute) -> Void = { _ in }
     ) {
         self.detail = detail
-        self.onReply = onReply
+        self.onCompose = onCompose
         self.onEdit = onEdit
         _index = State(initialValue: detail.startIndex)
     }
@@ -103,12 +107,12 @@ struct KotozuteDetailView: View {
 
     @ViewBuilder
     private var actions: some View {
-        if detail.showsReply {
+        if detail.showsCompose {
             Button {
                 dismiss()
-                onReply()
+                onCompose()
             } label: {
-                Text("お返しに書く")
+                Text("今週分のことづてを書く")
                     .font(Theme.font(17, weight: .bold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
