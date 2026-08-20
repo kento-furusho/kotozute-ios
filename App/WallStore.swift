@@ -87,14 +87,43 @@ final class WallStore {
         defer { isLoading = false }
 
         do {
-            async let mineResponse = client.archive(whose: .me, from: week.start, to: week.end)
-            async let partnerResponse = client.archive(whose: .partner, from: week.start, to: week.end)
-            mine = try await mineResponse.items
-            partner = try await partnerResponse.items
+            async let mineItems = allPages(whose: .me, in: week)
+            async let partnerItems = allPages(whose: .partner, in: week)
+            mine = try await mineItems
+            partner = try await partnerItems
         } catch {
             mine = []
             partner = []
             errorMessage = "読み込めなかった。"
         }
     }
+
+    /// その週のことづてを最後まで読む。
+    ///
+    /// サーバーは1回に limit 件までしか返さないので、nextCursor をたどる。
+    /// とくに相手の分は、絞り込みが limit のあとに効く都合で、
+    /// items が少なくても続きが残っていることがある。件数では打ち切れない。
+    private func allPages(whose: ArchiveWhose, in week: Week) async throws -> [Kotozute] {
+        var items: [Kotozute] = []
+        var cursor: String?
+        // 壊れたカーソルで無限に回らないよう、上限を決めておく。
+        for _ in 0..<pageLimit {
+            let page = try await client.archive(
+                whose: whose,
+                from: week.start,
+                to: week.end,
+                limit: pageSize,
+                cursor: cursor
+            )
+            items += page.items
+            guard let next = page.nextCursor else { return items }
+            cursor = next
+        }
+        return items
+    }
 }
+
+/// 1回のリクエストで取る件数。サーバー側の上限に合わせている。
+private let pageSize = 50
+/// 1週間ぶんで読むページ数の上限。壊れたカーソルで無限に回らないための歯止め。
+private let pageLimit = 20
