@@ -62,7 +62,7 @@ Amplify は使わず、素の AWS SDK for Swift で `InitiateAuth` を直接叩�
 
 ## 通知（APNs）
 
-オープンの日に通知を出すための配線。**まだ実際には飛ばない**。
+オープンの日に通知を出すための配線。**実機で届くところまで確認済み**。
 
 - 許可は「ペアが成立して本体に入った1回目」に尋ねる。断られても催促はせず、
   設定画面から iPhone の設定へ案内するだけにする。
@@ -74,9 +74,20 @@ Amplify は使わず、素の AWS SDK for Swift で `InitiateAuth` を直接叩�
   持っておくだけにして、送信は `KotozuteStore.syncPushToken()` が引き受ける。
   同じトークンは送らない。失敗しても画面には出さない（次に開いたときに送り直せる）。
 
-**残り**：Apple Developer で APNs の認証キーを発行し、SNS のプラットフォーム
-アプリケーションを作る。そのARNをバックエンドに渡すまでは、サーバーは
-`apnsToken` を保存するだけで端末の登録をしない。実機でないと本物のトークンは得られない。
+### 実機ビルドで踏んだ罠（再発させない）
+
+- **entitlements は `project.yml` の `properties` に書く**。`entitlements: path:` だけを
+  書くと、XcodeGen が生成のたびに空の `<dict/>` で上書きする。`aps-environment` が
+  抜けた状態で実機に入れると「有効な aps-environment が無い」と言われて登録に失敗する。
+- **`DEVELOPMENT_TEAM` も `project.yml` に書く**。`.xcodeproj` は毎回作り直すので、
+  Xcode の画面で選んだチームは再生成のたびに消える。チームが無いと Xcode は
+  「Sign to Run Locally」に落ち、entitlements ごと剥がれる。
+- どちらも **シミュレータでは表面化しない**。実機に入れて初めて分かる。
+
+### 配布時
+
+`aps-environment` を `production` にし、SNS のプラットフォームアプリケーションも
+`APNS`（本番）用を別に作る。どちらを使うかは、エンドポイントARNからサーバーが自動で判別する。
 
 ## 実装上の注意
 
