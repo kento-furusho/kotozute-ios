@@ -110,6 +110,15 @@ struct ComposeView: View {
                 .font(Theme.font(20, weight: .bold))
                 .foregroundStyle(Theme.ink)
 
+            // 「今週」がいつ閉じるのかを具体的に出す。
+            // 曜日と時刻は設定で変えられるので、決め打ちの文言にはしない。
+            if let nextOpenAt = store.homeState?.nextOpenAt,
+               let date = nextOpenAt.date(in: store.timezone) {
+                Text("\(OpenSchedule.dateTime(date, in: store.timezone))にオープン")
+                    .font(Theme.font(13, weight: .medium))
+                    .foregroundStyle(Theme.accent)
+            }
+
             if store.myKotozute.isEmpty {
                 Text("ありがとうと思ったときに、ひとこと。\nそれで十分。")
                     .font(Theme.font(15))
@@ -117,7 +126,7 @@ struct ComposeView: View {
                     .lineSpacing(4)
                     .padding(.top, 4)
             } else {
-                Text("オープンの日まで、自分だけに。")
+                Text("その日まで、自分だけに。")
                     .font(Theme.font(13))
                     .foregroundStyle(Theme.inkSoft)
 
