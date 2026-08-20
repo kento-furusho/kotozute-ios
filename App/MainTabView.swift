@@ -24,6 +24,8 @@ struct MainTabView: View {
     }
 
     @State private var selection: Tab = .read
+    /// 通知の許可と端末トークン。ここに来た＝ペアが成立している時点で尋ねる。
+    private var push: PushStore { PushStore.shared }
 
     /// シミュレータでの確認用。タブを押す代わり。
     ///   xcrun simctl launch <udid> dev.kotozute.app --tab write|read|wall|settings
@@ -52,6 +54,19 @@ struct MainTabView: View {
         }
         .background(Theme.background.ignoresSafeArea())
         .onAppear { if let tab = Self.launchTab { selection = tab } }
+        .task {
+            await push.refresh()
+            // 初回だけ尋ねる。2度目からは OS がダイアログを出さないので、
+            // 断られていたら設定画面から案内する。
+            if !push.hasAsked {
+                await push.requestAuthorization()
+            }
+            await store.syncPushToken(push.deviceToken)
+        }
+        // トークンは OS から遅れて降ってくる。届いたら送る。
+        .onChange(of: push.deviceToken) { _, token in
+            Task { await store.syncPushToken(token) }
+        }
     }
 
     @ViewBuilder

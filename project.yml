@@ -42,9 +42,24 @@ targets:
         CFBundleURLTypes:
           - CFBundleURLName: dev.kotozute.app.invite
             CFBundleURLSchemes: [kotozute]
+    # path だけを書くと、XcodeGen が生成のたびに空の <dict/> で上書きする。
+    # 鍵は properties に書いて XcodeGen 自身に生成させる。
+    # aps-environment が抜けると、端末は「有効な aps-environment が無い」と言って
+    # APNs への登録に失敗する。
+    entitlements:
+      path: App/Kotozute.entitlements
+      properties:
+        # 実機での開発用。App Store 配布時は production になる。
+        aps-environment: development
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.kotozute.app
+        # 署名の設定もここに書く。xcodeproj は xcodegen で作り直すので、
+        # Xcode の画面で選んだチームは再生成のたびに消える。
+        # チームが無いと Xcode は「Sign to Run Locally」に落ち、
+        # entitlements が適用されない（aps-environment が入らず通知が登録できない）。
+        DEVELOPMENT_TEAM: 5V6S74G5N9
+        CODE_SIGN_STYLE: Automatic
         MARKETING_VERSION: "0.1"
         CURRENT_PROJECT_VERSION: "1"
         # iPhone のみ。

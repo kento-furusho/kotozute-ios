@@ -2,6 +2,9 @@ import SwiftUI
 
 @main
 struct KotozuteApp: App {
+    /// APNs のトークンは UIApplicationDelegate 経由でしか受け取れない。
+    @UIApplicationDelegateAdaptor(PushAppDelegate.self) private var pushDelegate
+
     @State private var auth: AuthStore?
     @State private var setupError: String?
     /// 招待は未サインインでも扱うので、認証の外側に置く。

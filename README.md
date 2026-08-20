@@ -60,6 +60,35 @@ Amplify は使わず、素の AWS SDK for Swift で `InitiateAuth` を直接叩�
 `CognitoAuthenticator` は `TokenProvider` に準拠しているので、`KotozuteClient` は
 トークンの出所が Cognito であることを知らない。
 
+## 通知（APNs）
+
+オープンの日に通知を出すための配線。**実機で届くところまで確認済み**。
+
+- 許可は「ペアが成立して本体に入った1回目」に尋ねる。断られても催促はせず、
+  設定画面から iPhone の設定へ案内するだけにする。
+- 端末トークンは `UIApplicationDelegate`（`PushAppDelegate`）でしか受け取れないので、
+  `@UIApplicationDelegateAdaptor` で SwiftUI の App に相乗りさせている。
+- 受け取ったトークンは `PATCH /me` の `apnsToken` で送る。サーバーはこれを
+  SNS のエンドポイントに変えて `snsEndpointArn` に保存し、週一バッチがそこへ Publish する。
+- トークンはサインインより先に降ってくることがあるので、`PushStore` は受け取って
+  持っておくだけにして、送信は `KotozuteStore.syncPushToken()` が引き受ける。
+  同じトークンは送らない。失敗しても画面には出さない（次に開いたときに送り直せる）。
+
+### 実機ビルドで踏んだ罠（再発させない）
+
+- **entitlements は `project.yml` の `properties` に書く**。`entitlements: path:` だけを
+  書くと、XcodeGen が生成のたびに空の `<dict/>` で上書きする。`aps-environment` が
+  抜けた状態で実機に入れると「有効な aps-environment が無い」と言われて登録に失敗する。
+- **`DEVELOPMENT_TEAM` も `project.yml` に書く**。`.xcodeproj` は毎回作り直すので、
+  Xcode の画面で選んだチームは再生成のたびに消える。チームが無いと Xcode は
+  「Sign to Run Locally」に落ち、entitlements ごと剥がれる。
+- どちらも **シミュレータでは表面化しない**。実機に入れて初めて分かる。
+
+### 配布時
+
+`aps-environment` を `production` にし、SNS のプラットフォームアプリケーションも
+`APNS`（本番）用を別に作る。どちらを使うかは、エンドポイントARNからサーバーが自動で判別する。
+
 ## 実装上の注意
 
 ### 日時が2種類ある

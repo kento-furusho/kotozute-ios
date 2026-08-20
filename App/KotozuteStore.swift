@@ -30,6 +30,9 @@ final class KotozuteStore {
     private(set) var isAccepting = false
     private(set) var acceptError: String?
 
+    /// サーバーに送り終えた端末トークン。同じものを何度も送らないための覚え。
+    private var sentPushToken: String?
+
     /// nil のときは通信せず、手元の値だけで動く（起動引数での画面確認用）。
     private let client: KotozuteClient?
 
@@ -73,6 +76,22 @@ final class KotozuteStore {
             phase = .ready
         } catch {
             phase = .failed(Self.message(for: error))
+        }
+    }
+
+    /// 端末トークンをサーバーへ渡す。サーバーはこれを SNS のエンドポイントに変えて保存する。
+    ///
+    /// トークンは OS から降ってくるタイミングが読めないので、取れているときに何度でも
+    /// 呼んでよいようにしてある。同じものは送らない。
+    /// 失敗しても画面には出さない。通知が無くてもアプリは成り立つし、
+    /// アプリを開くたびに送り直す機会がある。
+    func syncPushToken(_ token: String?) async {
+        guard let client, let token, !token.isEmpty, token != sentPushToken else { return }
+        do {
+            _ = try await client.updateMe(UpdateMeRequest(apnsToken: token))
+            sentPushToken = token
+        } catch {
+            print("端末トークンを送れなかった: \(error)")
         }
     }
 
