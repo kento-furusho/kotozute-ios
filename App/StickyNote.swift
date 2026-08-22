@@ -41,37 +41,7 @@ struct StickyNote: View {
         // 正方形に近い形が付箋らしさの大半を作る。ただし本文が長いときは伸びてよい
         // （切り詰めると読めなくなる。ことづては読ませるものなので隠さない）。
         .frame(maxWidth: .infinity, minHeight: isLarge ? 260 : 150, alignment: .topLeading)
-        .background(paper.gradient)
-        // 紙の厚みに見える縁。クリップの内側に入れる。
-        .overlay(alignment: .top) {
-            Rectangle()
-                .fill(.white.opacity(0.5))
-                .frame(height: 1)
-        }
-        // 付箋の角はほぼ直角。角丸にするとカードに見えてしまう。
-        .clipShape(RoundedRectangle(cornerRadius: 3))
-        .shadow(color: Color(hex: 0x3A322C).opacity(0.28), radius: 9, x: 0, y: 7)
-        // テープはクリップの外。付箋からはみ出して貼られている。
-        .overlay(alignment: .top) { tape.offset(y: isLarge ? -11 : -7) }
-        .rotationEffect(.degrees(tilt))
-    }
-
-    /// マスキングテープ。半透明の白に、両端だけ破線を入れて切り口を出す。
-    private var tape: some View {
-        Rectangle()
-            .fill(.white.opacity(0.62))
-            .frame(width: isLarge ? 74 : 46, height: isLarge ? 26 : 17)
-            .overlay(alignment: .leading) { tapeEdge }
-            .overlay(alignment: .trailing) { tapeEdge }
-            .shadow(color: .black.opacity(0.09), radius: 1, y: 1)
-            .rotationEffect(.degrees(tapeTilt))
-    }
-
-    private var tapeEdge: some View {
-        Rectangle()
-            .stroke(style: StrokeStyle(lineWidth: 1, dash: [2, 2]))
-            .foregroundStyle(.black.opacity(0.08))
-            .frame(width: 1)
+        .stickyPaper(paper, tilt: tilt, tapeTilt: tapeTilt, isLarge: isLarge)
     }
 
     private static let dayFormatter: DateFormatter = {

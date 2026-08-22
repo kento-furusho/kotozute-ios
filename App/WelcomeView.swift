@@ -10,19 +10,27 @@ struct WelcomeView: View {
         VStack(spacing: 0) {
             Spacer()
 
-            stickyPreview
-
             Text("ことづて")
                 .font(Theme.font(38, weight: .bold))
                 .foregroundStyle(Theme.ink)
-                .padding(.top, 40)
+                .appearsInOrder(0)
 
-            Text("いいな、と思ったことを書きためて、\n週に一度ふたりで読む。")
+            Text("言いそこねた「ありがとう」を、\nことづてにして貼っておく。")
                 .font(Theme.font(16))
                 .foregroundStyle(Theme.inkSoft)
                 .multilineTextAlignment(.center)
                 .lineSpacing(6)
                 .padding(.top, 14)
+                .appearsInOrder(1)
+
+            stickyPreview
+                .padding(.top, 34)
+
+            Text("ふたりの壁に、静かにたまっていく。")
+                .font(Theme.font(15))
+                .foregroundStyle(Theme.inkSoft)
+                .padding(.top, 34)
+                .appearsInOrder(5)
 
             Spacer()
 
@@ -48,22 +56,18 @@ struct WelcomeView: View {
         .background(Theme.background.ignoresSafeArea())
     }
 
-    /// 何のアプリかを一目で伝えるための飾り。文言では説明しない。
+    /// 見本のことづて。ここは飾りではなく「何を書けばいいのか」を見せる場所。
+    /// 色板だけにすると、書きはじめる前のいちばん大きな不安が残る。
     private var stickyPreview: some View {
-        ZStack {
-            note(Theme.stickyPaper(at: 2), rotation: -8, offset: CGSize(width: -54, height: 6))
-            note(Theme.stickyPaper(at: 1), rotation: 6, offset: CGSize(width: 52, height: 12))
-            note(Theme.stickyPaper(at: 0), rotation: -1, offset: .zero)
+        VStack(spacing: 14) {
+            HStack(alignment: .top, spacing: 12) {
+                SampleNote(text: "おかえりの声、\n元気だった", paperIndex: 0, tilt: -3)
+                    .appearsInOrder(2)
+                SampleNote(text: "プリン、\nゆずってくれた", paperIndex: 2, tilt: 4)
+                    .appearsInOrder(3)
+            }
+            SampleNote(text: "寝る前の「おつかれ」", paperIndex: 1, tilt: -2, width: 132, minHeight: 76)
+                .appearsInOrder(4)
         }
-        .frame(height: 132)
-    }
-
-    private func note(_ paper: Theme.StickyPaper, rotation: Double, offset: CGSize) -> some View {
-        RoundedRectangle(cornerRadius: 3)
-            .fill(paper.gradient)
-            .frame(width: 116, height: 116)
-            .shadow(color: .black.opacity(0.08), radius: 6, y: 3)
-            .rotationEffect(.degrees(rotation))
-            .offset(offset)
     }
 }
