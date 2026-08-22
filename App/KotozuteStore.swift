@@ -61,6 +61,12 @@ final class KotozuteStore {
             myName = me.displayName
 
             guard me.pairStatus == .paired else {
+                // ペア成立前に書いた分も、招待画面で見せたいので取っておく。
+                // サーバーはペア未成立でも自分のことづてを返す（相手に関する値は空）。
+                // 取れなくても招待は進められるので、失敗しても止めない。
+                if let thisWeek = try? await client.thisWeek() {
+                    myKotozute = thisWeek.myKotozute
+                }
                 phase = .noPair
                 return
             }

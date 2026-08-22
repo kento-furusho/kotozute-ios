@@ -21,6 +21,18 @@ struct KotozuteApp: App {
             case "welcome": WelcomeView(onStart: {}, onSignIn: {})
             case "concept": ConceptView(onDone: {})
             case "exchange": ConceptView(onDone: {}, startPage: 1)
+            // 招待画面は「登録済み・ペア未成立」でないと出ないので確認しづらい。
+            // --demo-state waiting と併せて使うと1枚目が入った状態で見られる。
+            case "invite":
+                if let auth = try? AuthStore() {
+                    InviteView(
+                        store: KotozuteStore(client: nil),
+                        auth: auth,
+                        router: InviteRouter()
+                    )
+                } else {
+                    nil as EmptyView?
+                }
             default: nil as EmptyView?
             }
         } else {
