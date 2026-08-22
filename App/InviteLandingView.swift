@@ -29,12 +29,20 @@ struct InviteLandingView: View {
                     .foregroundStyle(Theme.ink)
                     .multilineTextAlignment(.center)
 
-                Text("ふたりで、いいなと思ったことを書きためる。\n週に一度まとめて読む。")
-                    .font(Theme.font(15))
-                    .foregroundStyle(Theme.inkSoft)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(4)
-                    .padding(.top, 12)
+                if preview.inviterHasWritten {
+                    // もう書いてある場合だけ、その事実を伝える。
+                    // 書いていない人の招待でこれを出すと嘘になるので、
+                    // サーバーの inviterHasWritten を必ず見る。枚数は出さない。
+                    presence(of: preview.inviterDisplayName)
+                        .padding(.top, 24)
+                } else {
+                    Text("ふたりで、いいなと思ったことを書きためる。\n週に一度まとめて読む。")
+                        .font(Theme.font(15))
+                        .foregroundStyle(Theme.inkSoft)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(4)
+                        .padding(.top, 12)
+                }
 
                 Button(action: onContinue) {
                     Text("はじめる")
@@ -59,6 +67,33 @@ struct InviteLandingView: View {
         .padding(.horizontal, 28)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.background.ignoresSafeArea())
+    }
+
+    /// 「もう貼ってある」ことだけを見せる。中身も枚数も出さない。
+    /// 裏返した付箋にすることで、まだ読めないことを絵で伝える。
+    private func presence(of name: String) -> some View {
+        VStack(spacing: 16) {
+            RoundedRectangle(cornerRadius: 3)
+                .fill(Theme.stickyPaper(at: 2).gradient)
+                .frame(width: 132, height: 132)
+                .overlay {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 22, weight: .medium))
+                        .foregroundStyle(Theme.ink.opacity(0.28))
+                }
+                .shadow(color: Theme.ink.opacity(0.22), radius: 8, y: 6)
+                .rotationEffect(.degrees(-3))
+
+            Text("\(name)のことづてが、もう貼ってある。")
+                .font(Theme.font(15))
+                .foregroundStyle(Theme.ink)
+                .multilineTextAlignment(.center)
+
+            Text("じぶんが1枚書くと、見られる。")
+                .font(Theme.font(14))
+                .foregroundStyle(Theme.inkSoft)
+                .multilineTextAlignment(.center)
+        }
     }
 }
 

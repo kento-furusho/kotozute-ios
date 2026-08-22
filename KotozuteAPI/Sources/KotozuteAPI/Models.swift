@@ -88,6 +88,26 @@ public struct CreateInviteResponse: Decodable, Sendable {
 public struct InviteResponse: Decodable, Sendable {
     public let inviterDisplayName: String
     public let status: String
+    /// 招待した人が1枚でも書いているか。枚数は返らない（存在のみ）。
+    /// 古いサーバーはこのキーを返さないので、無ければ false 扱いにする。
+    public let inviterHasWritten: Bool
+
+    private enum CodingKeys: String, CodingKey {
+        case inviterDisplayName, status, inviterHasWritten
+    }
+
+    public init(inviterDisplayName: String, status: String, inviterHasWritten: Bool = false) {
+        self.inviterDisplayName = inviterDisplayName
+        self.status = status
+        self.inviterHasWritten = inviterHasWritten
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        inviterDisplayName = try c.decode(String.self, forKey: .inviterDisplayName)
+        status = try c.decode(String.self, forKey: .status)
+        inviterHasWritten = try c.decodeIfPresent(Bool.self, forKey: .inviterHasWritten) ?? false
+    }
 }
 
 public struct AcceptInviteRequest: Encodable, Sendable {
