@@ -23,15 +23,20 @@ struct RootView: View {
             case .signedOut, .needsConfirmation:
                 // 招待リンクから来た未サインインの相手には、まず「誰からか」を見せる。
                 if router.pendingToken != nil, !didContinueFromInvite {
-                    InviteLandingView(router: router) { didContinueFromInvite = true }
+                    InviteLandingView(router: router) {
+                        didContinueFromInvite = true
+                        // 招待から来た人は「誰からの招待か」で惹きつけ済み。
+                        // 説明を挟まず登録へ渡す（される側は別導線）。
+                        entry = .register
+                    }
                 } else if case let .needsConfirmation(email) = auth.phase {
                     ConfirmView(auth: auth, email: email)
                 } else if let entry {
                     AuthView(auth: auth, startsRegistering: entry == .register)
                 } else {
-                    // 招待から来た人は「誰からの招待か」で惹きつけ済みなので、
-                    // はじめる画面を挟まずそのまま登録へ進める。
-                    WelcomeView(
+                    // 説明を全部見せてから登録へ渡す。登録の前に「何のアプリか」が
+                    // 分かっている状態を作る。
+                    OnboardingView(
                         onStart: { entry = .register },
                         onSignIn: { entry = .signIn }
                     )
@@ -65,8 +70,6 @@ struct SignedInView: View {
     @Bindable var router: InviteRouter
     @State private var store: KotozuteStore
     @State private var wall: WallStore
-    /// 一度見たら二度と出さない。端末に残す。
-    @AppStorage("hasSeenConcept") private var hasSeenConcept = false
     /// 最初の1枚の画面を通過したか。書いたかどうかではなく「通ったか」で判断する
     /// （「あとで」を選んだ人を毎回そこへ戻さないため）。
     @AppStorage("hasPassedFirstKotozute") private var hasPassedFirstKotozute = false
@@ -92,12 +95,9 @@ struct SignedInView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Theme.background.ignoresSafeArea())
             case .needsProfile:
-                // 登録直後の人だけがここを通る。「どう動くか」を先に見せてから名前を聞く。
-                if hasSeenConcept {
-                    ProfileSetupView(store: store)
-                } else {
-                    ConceptView { hasSeenConcept = true }
-                }
+                // 登録直後の人だけがここを通る。説明は登録の前に済ませてあるので、
+                // ここでは名前を聞くだけ。
+                ProfileSetupView(store: store)
             case .noPair:
                 // 招待を抱えていれば受諾へ。
                 if router.pendingToken != nil {
