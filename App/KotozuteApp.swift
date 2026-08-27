@@ -13,40 +13,47 @@ struct KotozuteApp: App {
     /// シミュレータでの確認用。オンボーディングは通常サインアウトしないと見られない。
     ///   xcrun simctl launch <udid> dev.kotozute.app --screen welcome|concept
     @ViewBuilder
-    private static var previewScreen: (some View)? {
+    /// 確認用の画面を直接開く。指定が無ければ nil を返し、通常の起動に任せる。
+    ///
+    /// @ViewBuilder は使わない。分岐を包んだ結果が「中身が空の非 nil」になり、
+    /// 引数なしの通常起動でも `if let` が成立して真っ白な画面になる。
+    /// AnyView で受けて、返さないときは明示的に nil を返す。
+    ///
+    ///   xcrun simctl launch <udid> dev.kotozute.app --screen welcome|concept|exchange|invite|invite-landing
+    private static var previewScreen: AnyView? {
         #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
-        if let index = arguments.firstIndex(of: "--screen"), index + 1 < arguments.count {
-            switch arguments[index + 1] {
-            case "welcome": WelcomeView(onStart: {}, onSignIn: {})
-            case "concept": ConceptView(onDone: {})
-            case "exchange": ConceptView(onDone: {}, startPage: 1)
-            // 招待画面は「登録済み・ペア未成立」でないと出ないので確認しづらい。
-            // --demo-state waiting と併せて使うと1枚目が入った状態で見られる。
-            // 招待される側の入口。--invite <token> と併せて使う。
-            case "invite-landing":
-                InviteLandingView(router: {
-                    let router = InviteRouter()
-                    router.seedFromLaunchArguments()
-                    return router
-                }()) {}
-            case "invite":
-                if let auth = try? AuthStore() {
-                    InviteView(
-                        store: KotozuteStore(client: nil),
-                        auth: auth,
-                        router: InviteRouter()
-                    )
-                } else {
-                    nil as EmptyView?
-                }
-            default: nil as EmptyView?
-            }
-        } else {
-            nil as EmptyView?
+        guard let index = arguments.firstIndex(of: "--screen"), index + 1 < arguments.count else {
+            return nil
+        }
+        switch arguments[index + 1] {
+        case "welcome":
+            return AnyView(WelcomeView(onStart: {}, onSignIn: {}))
+        case "concept":
+            return AnyView(ConceptView(onDone: {}))
+        case "exchange":
+            return AnyView(ConceptView(onDone: {}, startPage: 1))
+        // 招待画面は「登録済み・ペア未成立」でないと出ないので確認しづらい。
+        // --demo-state waiting と併せて使うと1枚目が入った状態で見られる。
+        case "invite":
+            guard let auth = try? AuthStore() else { return nil }
+            return AnyView(
+                InviteView(
+                    store: KotozuteStore(client: nil),
+                    auth: auth,
+                    router: InviteRouter()
+                )
+            )
+        // 招待される側の入口。--invite <token> と併せて使う。
+        case "invite-landing":
+            let router = InviteRouter()
+            router.seedFromLaunchArguments()
+            return AnyView(InviteLandingView(router: router) {})
+        default:
+            return nil
         }
         #else
-        nil as EmptyView?
+        return nil
         #endif
     }
 
