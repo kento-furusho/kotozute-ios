@@ -20,27 +20,6 @@ enum OpenSchedule {
         return "\(formatter.string(from: start)) – \(formatter.string(from: end))"
     }
 
-    /// 「オープンまで あと3日」。当日は「今日オープン」。
-    static func remaining(until date: Date, in timezone: TimeZone) -> String {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = timezone
-        let days = calendar.dateComponents(
-            [.day],
-            from: calendar.startOfDay(for: Date()),
-            to: calendar.startOfDay(for: date)
-        ).day ?? 0
-        return days <= 0 ? "今日オープン" : "オープンまで あと\(days)日"
-    }
-
-    /// 「SUNDAY OPEN」。デザイン案の見出しに合わせた飾り。
-    static func weekdayLabel(for date: Date, in timezone: TimeZone) -> String {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = timezone
-        let names = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"]
-        let weekday = calendar.component(.weekday, from: date) - 1
-        return "\(names[max(0, min(6, weekday))]) OPEN"
-    }
-
     /// 使い回さず都度作る。DateFormatter は可変なので、タイムゾーンの違う
     /// 画面が1つを共有すると、片方の設定がもう片方に漏れる。
     private static func formatter(dateFormat: String, in timezone: TimeZone) -> DateFormatter {

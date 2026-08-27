@@ -97,15 +97,10 @@ struct ViewingView: View {
 
             Spacer()
 
-            VStack(spacing: 2) {
-                Text(weekTitle)
+            if let week = wall.current {
+                Text(OpenSchedule.range(from: week.start, to: week.end, in: store.timezone))
                     .font(Theme.font(17, weight: .bold))
                     .foregroundStyle(Theme.ink)
-                if let week = wall.current {
-                    Text(OpenSchedule.range(from: week.start, to: week.end, in: store.timezone))
-                        .font(Theme.font(11))
-                        .foregroundStyle(Theme.inkSoft)
-                }
             }
 
             Spacer()
@@ -119,15 +114,6 @@ struct ViewingView: View {
             .opacity(wall.hasNewer ? 1 : 0.25)
         }
         .foregroundStyle(Theme.inkSoft)
-    }
-
-    private var weekTitle: String {
-        guard let week = wall.current else { return "今週" }
-        switch week.index {
-        case 0: return "今週"
-        case 1: return "先週"
-        default: return "\(week.index)週前"
-        }
     }
 
     // MARK: - 中身
@@ -146,7 +132,7 @@ struct ViewingView: View {
     private var latestWeek: some View {
         switch state.screen {
         case let .partnerVisible(items):
-            section("\(store.partnerName)からのことづて") {
+            section("\(store.partnerName)のことづて") {
                 StickyNoteList(items: items, colorOffset: 2) { tapped in
                     fullScreen = .detail(partnerDetail(items, startingAt: tapped))
                 }
@@ -158,7 +144,7 @@ struct ViewingView: View {
             mineSection(state.lastCycleMine)
 
         case .waitingForOpen, .plainHome:
-            countdownCard
+            partnerPresence
             mineSection(state.lastCycleMine)
         }
     }
@@ -179,12 +165,12 @@ struct ViewingView: View {
                 .padding(.top, 8)
         } else {
             if !wall.partner.isEmpty {
-                section("\(store.partnerName)からのことづて") {
+                section("\(store.partnerName)のことづて") {
                     StickyNoteList(items: wall.partner, colorOffset: 2) { tapped in
                         fullScreen = .detail(KotozuteDetail(
                             items: wall.partner,
                             startIndex: wall.partner.firstIndex(of: tapped) ?? 0,
-                            title: "\(store.partnerName)からのことづて",
+                            title: "\(store.partnerName)のことづて",
                             colorOffset: 2,
                             isEditable: false,
                             showsCompose: false
@@ -199,12 +185,12 @@ struct ViewingView: View {
     @ViewBuilder
     private func mineSection(_ items: [Kotozute]) -> some View {
         if !items.isEmpty {
-            section("じぶんのことづて") {
+            section(myTitle) {
                 StickyNoteList(items: items, colorOffset: 4) { tapped in
                     fullScreen = .detail(KotozuteDetail(
                         items: items,
                         startIndex: items.firstIndex(of: tapped) ?? 0,
-                        title: "じぶんのことづて",
+                        title: myTitle,
                         colorOffset: 4,
                         isEditable: false,
                         showsCompose: false
@@ -214,13 +200,19 @@ struct ViewingView: View {
         }
     }
 
+    /// 自分のことづての見出し。相手側が「◯◯のことづて」なので、こちらも名前で揃える。
+    /// 名前がまだ取れていないときだけ「じぶん」で埋める。
+    private var myTitle: String {
+        store.myName.isEmpty ? "じぶんのことづて" : "\(store.myName)のことづて"
+    }
+
     // MARK: - 部品
 
     private func partnerDetail(_ items: [Kotozute], startingAt tapped: Kotozute? = nil) -> KotozuteDetail {
         KotozuteDetail(
             items: items,
             startIndex: tapped.flatMap { items.firstIndex(of: $0) } ?? 0,
-            title: "\(store.partnerName)からのことづて",
+            title: "\(store.partnerName)のことづて",
             colorOffset: 2,
             isEditable: false,
             showsCompose: true
@@ -266,31 +258,17 @@ struct ViewingView: View {
         fullScreen = .reveal(RevealItems(items: items))
     }
 
+    /// 相手の気配。存在だけを伝える。枚数は出さない（サーバーも返さない）。
+    ///
+    /// もとはオープンまでの残り日数を出すカードの中にあった。カードごと消したが、
+    /// 気配は仕様上ここにしか出る場所が無いので、単独で残している。
     @ViewBuilder
-    private var countdownCard: some View {
-        if let nextOpenAt = state.nextOpenAt,
-           let date = nextOpenAt.date(in: store.timezone) {
-            infoCard {
-                Text(OpenSchedule.weekdayLabel(for: date, in: store.timezone))
-                    .font(.system(size: 11, weight: .heavy, design: .rounded))
-                    .tracking(1.5)
-                    .foregroundStyle(Theme.accent)
-
-                Text(OpenSchedule.remaining(until: date, in: store.timezone))
-                    .font(Theme.font(22, weight: .bold))
-                    .foregroundStyle(Theme.ink)
-
-                Text("\(OpenSchedule.dateTime(date, in: store.timezone))にオープン。")
-                    .font(Theme.font(13))
-                    .foregroundStyle(Theme.inkSoft)
-
-                if state.showsPartnerPresence {
-                    Text("\(store.partnerName)も、今週なにか書いている。")
-                        .font(Theme.font(14, weight: .medium))
-                        .foregroundStyle(Theme.ink)
-                        .padding(.top, 8)
-                }
-            }
+    private var partnerPresence: some View {
+        if state.showsPartnerPresence {
+            Text("\(store.partnerName)も、今週なにか書いている。")
+                .font(Theme.font(15, weight: .medium))
+                .foregroundStyle(Theme.ink)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
