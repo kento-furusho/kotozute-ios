@@ -120,6 +120,42 @@ struct ExchangeDiagram: View {
     }
 }
 
+/// 壁いっぱいの付箋。たまっていく側の価値を絵で見せる。
+struct WallPreview: View {
+    /// 傾きは位置から決める。再描画のたびに変わるとちらつく。
+    private let tilts: [Double] = [-4, 3, -2, 5, -3, 2, -5, 3, -1]
+
+    var body: some View {
+        VStack(spacing: 10) {
+            ForEach(0..<3, id: \.self) { row in
+                HStack(spacing: 10) {
+                    ForEach(0..<3, id: \.self) { column in
+                        let index = row * 3 + column
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(Theme.stickyPaper(at: index).gradient)
+                            .frame(width: 54, height: 54)
+                            .overlay(alignment: .topLeading) { lines.padding(9) }
+                            .shadow(color: Theme.ink.opacity(0.18), radius: 4, y: 3)
+                            .rotationEffect(.degrees(tilts[index]))
+                            // 古いものほど薄くして、奥行きと時間の積み重なりを出す。
+                            .opacity(row == 2 ? 0.55 : 1)
+                    }
+                }
+            }
+        }
+    }
+
+    private var lines: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            ForEach(0..<2, id: \.self) { line in
+                Capsule()
+                    .fill(Theme.ink.opacity(0.16))
+                    .frame(width: line == 1 ? 18 : 34, height: 2)
+            }
+        }
+    }
+}
+
 /// 少し遅れて現れる。順に貼られていくように見せるためのもの。
 struct AppearsInOrder: ViewModifier {
     let index: Int

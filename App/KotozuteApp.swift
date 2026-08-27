@@ -19,7 +19,7 @@ struct KotozuteApp: App {
     /// 引数なしの通常起動でも `if let` が成立して真っ白な画面になる。
     /// AnyView で受けて、返さないときは明示的に nil を返す。
     ///
-    ///   xcrun simctl launch <udid> dev.kotozute.app --screen welcome|concept|exchange|invite|invite-landing
+    ///   xcrun simctl launch <udid> dev.kotozute.app --screen welcome|concept|exchange|wall|invite|invite-landing
     private static var previewScreen: AnyView? {
         #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
@@ -28,11 +28,13 @@ struct KotozuteApp: App {
         }
         switch arguments[index + 1] {
         case "welcome":
-            return AnyView(WelcomeView(onStart: {}, onSignIn: {}))
+            return AnyView(OnboardingView(onStart: {}, onSignIn: {}))
         case "concept":
-            return AnyView(ConceptView(onDone: {}))
+            return AnyView(OnboardingView(onStart: {}, onSignIn: {}, startPage: 1))
         case "exchange":
-            return AnyView(ConceptView(onDone: {}, startPage: 1))
+            return AnyView(OnboardingView(onStart: {}, onSignIn: {}, startPage: 2))
+        case "wall":
+            return AnyView(OnboardingView(onStart: {}, onSignIn: {}, startPage: 3))
         // 招待画面は「登録済み・ペア未成立」でないと出ないので確認しづらい。
         // --demo-state waiting と併せて使うと1枚目が入った状態で見られる。
         case "invite":
