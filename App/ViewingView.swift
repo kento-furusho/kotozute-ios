@@ -46,6 +46,18 @@ struct ViewingView: View {
             }
             .navigationTitle("ことづて")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                #if DEBUG
+                // 【テスト用・DEBUG限定】オープンの演出はオープン日にならないと
+                // 見られないので、その場で流せるようにしている。
+                // 配布ビルドには入らない（#if DEBUG）。確認が済んだら消してよい。
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("オープンを試す", action: playRevealForTesting)
+                        .font(Theme.font(13))
+                        .foregroundStyle(Theme.inkSoft)
+                }
+                #endif
+            }
             .refreshable {
                 await store.load()
                 await wall.load()
@@ -219,6 +231,33 @@ struct ViewingView: View {
         if case let .partnerVisible(items) = state.screen { return items.first?.id ?? "" }
         return ""
     }
+
+    #if DEBUG
+    /// 【テスト用】いまの状態にかかわらずオープンの演出を流す。
+    ///
+    /// 本物のオープンを起こすわけではない。区切りは動かないので、
+    /// 閉じたあとの画面はもとの状態のまま。
+    ///
+    /// 相手のことづてが手元にあるときはそれを使う。無いときは見本を出す
+    /// （ロック中はサーバーが本文を返さないので、手元には存在しない）。
+    private func playRevealForTesting() {
+        let items: [Kotozute]
+        if case let .partnerVisible(visible) = state.screen, !visible.isEmpty {
+            items = visible
+        } else {
+            items = Self.sampleItems
+        }
+        // 一度見た記録を消しておく。本物のオープンのときに演出が出なくなるのを防ぐ。
+        seenRevealKey = ""
+        fullScreen = .reveal(RevealItems(items: items))
+    }
+
+    private static let sampleItems: [Kotozute] = [
+        Kotozute(id: "sample-1", body: "コーヒー淹れてくれてありがとう", createdAt: Date()),
+        Kotozute(id: "sample-2", body: "昨日の話、ちゃんと聞いてくれてうれしかった", createdAt: Date()),
+        Kotozute(id: "sample-3", body: "洗い物、いつのまにか終わってた", createdAt: Date()),
+    ]
+    #endif
 
     private func showRevealIfNeeded(_ key: String) {
         guard !key.isEmpty, key != seenRevealKey else { return }
