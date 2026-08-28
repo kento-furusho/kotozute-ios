@@ -69,9 +69,13 @@ struct ViewingView: View {
             .fullScreenCover(item: $fullScreen) { screen in
                 switch screen {
                 case let .reveal(wrapped):
-                    RevealView(partnerName: store.partnerName, items: wrapped.items) {
-                        fullScreen = .detail(partnerDetail(wrapped.items))
-                    }
+                    RevealView(
+                        partnerName: store.partnerName,
+                        items: wrapped.items,
+                        // 押して初めて「見た」と記録する。開かずに閉じた人には次にまた出す。
+                        onOpened: { seenRevealKey = wrapped.items.first?.id ?? "" },
+                        onRead: { fullScreen = .detail(partnerDetail(wrapped.items)) }
+                    )
                 case let .detail(detail):
                     KotozuteDetailView(detail: detail, onCompose: onWrite)
                 }
@@ -254,7 +258,7 @@ struct ViewingView: View {
     private func showRevealIfNeeded(_ key: String) {
         guard !key.isEmpty, key != seenRevealKey else { return }
         guard case let .partnerVisible(items) = state.screen else { return }
-        seenRevealKey = key
+        // ここでは記録しない。実際にオープンを押したときに RevealView から記録する。
         fullScreen = .reveal(RevealItems(items: items))
     }
 
