@@ -90,7 +90,9 @@ struct RevealView: View {
                 .font(Theme.font(28, weight: .bold))
                 .foregroundStyle(Theme.ink)
 
-            Text("\(partnerName)からの分がそろった。")
+            // 見出しが「今週のことづて」なので、ここは誰のものかと、
+            // 読める状態になったことだけを言う。
+            Text("\(partnerName)のことづてが読めるようになりました")
                 .font(Theme.font(14))
                 .foregroundStyle(Theme.inkSoft)
         }

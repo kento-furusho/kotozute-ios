@@ -1,3 +1,4 @@
+import KotozuteAPI
 import SwiftUI
 
 @main
@@ -33,6 +34,18 @@ struct KotozuteApp: App {
             return AnyView(OnboardingView(onStart: {}, onSignIn: {}, startPage: 1))
         case "exchange":
             return AnyView(OnboardingView(onStart: {}, onSignIn: {}, startPage: 2))
+        // オープンの演出。見る画面の「オープンを試す」と同じものを直接開く。
+        case "reveal":
+            return AnyView(
+                RevealView(
+                    partnerName: "あいて",
+                    items: [
+                        Kotozute(id: "r1", body: "コーヒー淹れてくれてありがとう", createdAt: Date()),
+                        Kotozute(id: "r2", body: "昨日の話、ちゃんと聞いてくれてうれしかった", createdAt: Date()),
+                        Kotozute(id: "r3", body: "洗い物、いつのまにか終わってた", createdAt: Date()),
+                    ]
+                ) {}
+            )
         case "wall":
             return AnyView(OnboardingView(onStart: {}, onSignIn: {}, startPage: 3))
         // 招待画面は「登録済み・ペア未成立」でないと出ないので確認しづらい。
