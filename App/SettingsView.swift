@@ -12,6 +12,8 @@ struct SettingsView: View {
     @State private var isSaving = false
     @State private var message: String?
     private var push: PushStore { PushStore.shared }
+    @State private var showsDeleteConfirm = false
+    @State private var isDeleting = false
     @State private var name = ""
     @State private var isSavingName = false
     @State private var nameMessage: String?
@@ -141,6 +143,15 @@ struct SettingsView: View {
                 .font(Theme.font(15))
                 .foregroundStyle(Theme.accent)
                 .padding(.top, 14)
+
+                // 取り返しがつかないので、いちばん下に置いて確認を挟む。
+                Button(isDeleting ? "削除中…" : "アカウントを削除") {
+                    showsDeleteConfirm = true
+                }
+                .font(Theme.font(15))
+                .foregroundStyle(Theme.inkSoft)
+                .padding(.top, 22)
+                .disabled(isDeleting)
             }
             .padding(20)
         }
@@ -148,6 +159,22 @@ struct SettingsView: View {
         .navigationTitle("設定")
         .navigationBarTitleDisplayMode(.inline)
         .task { await push.refresh() }
+        // 何が消えて何が残るかを、押す前に具体的に書く。
+        .alert("アカウントを削除する", isPresented: $showsDeleteConfirm) {
+            Button("削除する", role: .destructive) {
+                Task {
+                    isDeleting = true
+                    if await store.deleteAccount() {
+                        // 消えたあとの画面に留まらないよう、そのままサインアウトする。
+                        await auth.signOut()
+                    }
+                    isDeleting = false
+                }
+            }
+            Button("やめる", role: .cancel) {}
+        } message: {
+            Text("じぶんが書いたことづてと、アカウントが消える。\nもとに戻せない。\n\nあいてが書いたことづては、あいての手元に残る。\nペアは解消され、あいてはまた誰かを招待できる。")
+        }
         .onChange(of: store.myName) { _, newName in name = newName }
         .onAppear {
             name = store.myName
