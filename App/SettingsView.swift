@@ -14,6 +14,8 @@ struct SettingsView: View {
     private var push: PushStore { PushStore.shared }
     @State private var showsDeleteConfirm = false
     @State private var isDeleting = false
+    @State private var showsDissolveConfirm = false
+    @State private var isDissolving = false
     @State private var name = ""
     @State private var isSavingName = false
     @State private var nameMessage: String?
@@ -131,6 +133,13 @@ struct SettingsView: View {
                 }
                 .padding(.vertical, 12)
 
+                Button(isDissolving ? "解消中…" : "ペアを解消する") {
+                    showsDissolveConfirm = true
+                }
+                .font(Theme.font(15))
+                .foregroundStyle(Theme.inkSoft)
+                .disabled(isDissolving)
+
                 Divider().padding(.vertical, 28)
 
                 Text("アカウント")
@@ -159,6 +168,19 @@ struct SettingsView: View {
         .navigationTitle("設定")
         .navigationBarTitleDisplayMode(.inline)
         .task { await push.refresh() }
+        // ことづては消えない。消えるのは関係のほうだと分かるように書く。
+        .alert("ペアを解消する", isPresented: $showsDissolveConfirm) {
+            Button("解消する", role: .destructive) {
+                Task {
+                    isDissolving = true
+                    _ = await store.dissolvePair()
+                    isDissolving = false
+                }
+            }
+            Button("やめる", role: .cancel) {}
+        } message: {
+            Text("ふたりの壁が終わる。おたがい、また誰かを招待できる。\n\nことづては消えない。じぶんが書いた分は手元に残る。\nただし、これから組む相手には渡らない。")
+        }
         // 何が消えて何が残るかを、押す前に具体的に書く。
         .alert("アカウントを削除する", isPresented: $showsDeleteConfirm) {
             Button("削除する", role: .destructive) {

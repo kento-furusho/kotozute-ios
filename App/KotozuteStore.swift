@@ -128,6 +128,21 @@ final class KotozuteStore {
         }
     }
 
+    /// ペアを解消する。成功したら true。
+    ///
+    /// アカウントもことづても残る。相手はペア未成立に戻る。
+    func dissolvePair() async -> Bool {
+        guard let client else { return false }
+        do {
+            try await client.deletePair()
+            await load()
+            return true
+        } catch {
+            phase = .failed(Self.message(for: error))
+            return false
+        }
+    }
+
     /// アカウントを消す。成功したら true。
     ///
     /// 消えるのは自分のことづてと自分のアカウント。相手が書いた分は相手のものなので残る。
