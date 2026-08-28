@@ -101,7 +101,9 @@ final class KotozuteStore {
     func syncPushToken(_ token: String?) async {
         guard let client, let token, !token.isEmpty, token != sentPushToken else { return }
         do {
-            _ = try await client.updateMe(UpdateMeRequest(apnsToken: token))
+            _ = try await client.updateMe(
+                UpdateMeRequest(apnsToken: token, apnsEnvironment: PushStore.environment)
+            )
             sentPushToken = token
         } catch {
             print("端末トークンを送れなかった: \(error)")

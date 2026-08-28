@@ -59,14 +59,32 @@ public struct MeResponse: Decodable, Sendable {
 
 // MARK: - PATCH /me
 
+/// 端末トークンがどちらの APNs のものか。
+///
+/// サーバーはトークンを見ても判別できない。開発ビルドと配布ビルドでは
+/// APNs のエンドポイントが別物で、取り違えると拒否されて二度と届かなくなる。
+public enum APNsEnvironment: String, Encodable, Sendable {
+    /// Xcode から実機に入れたビルド。
+    case sandbox
+    /// TestFlight / App Store から入れたビルド。
+    case production
+}
+
 public struct UpdateMeRequest: Encodable, Sendable {
     public let displayName: String?
     public let apnsToken: String?
+    public let apnsEnvironment: APNsEnvironment?
 
-    /// 両方 nil のまま送るとサーバーが 400 を返す。呼び出し側で少なくとも一方を指定すること。
-    public init(displayName: String? = nil, apnsToken: String? = nil) {
+    /// 表示名と apnsToken の両方が nil だとサーバーが 400 を返す。
+    /// 呼び出し側で少なくとも一方を指定すること。
+    public init(
+        displayName: String? = nil,
+        apnsToken: String? = nil,
+        apnsEnvironment: APNsEnvironment? = nil
+    ) {
         self.displayName = displayName
         self.apnsToken = apnsToken
+        self.apnsEnvironment = apnsEnvironment
     }
 }
 
