@@ -7,7 +7,7 @@ import SwiftUI
 ///   - 大きな付箋を1枚だけ出す
 ///   - 左右スワイプで次のことづてへ
 ///   - 枚数インジケータ（何枚あるかは、開いた本人には見えていい）
-///   - 相手の分には「今週分のことづてを書く」、自分の分には「書き直す」
+///   - 相手の分には「ことづてを書く」、自分の分には「書き直す」
 struct KotozuteDetail: Identifiable {
     let id = UUID()
     let items: [Kotozute]
@@ -26,7 +26,7 @@ struct KotozuteDetail: Identifiable {
 
 struct KotozuteDetailView: View {
     let detail: KotozuteDetail
-    /// 「今週分のことづてを書く」。閉じてから書く画面へ。
+    /// 「ことづてを書く」。閉じてから書く画面へ。
     let onCompose: () -> Void
     /// 「書き直す」。対象のことづてを渡す。
     let onEdit: (Kotozute) -> Void
@@ -112,7 +112,7 @@ struct KotozuteDetailView: View {
                 dismiss()
                 onCompose()
             } label: {
-                Text("今週分のことづてを書く")
+                Text("ことづてを書く")
                     .font(Theme.font(17, weight: .bold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
