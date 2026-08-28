@@ -38,6 +38,22 @@ struct KotozuteApp: App {
         // 直に置くと dismiss() の相手がおらず、「とじる」も「1枚ずつ読む」も効かない。
         case "reveal":
             return AnyView(RevealPreviewHost())
+        // 1枚ずつ読む画面。自分の分（書き直せる）として開く。
+        case "detail":
+            return AnyView(
+                KotozuteDetailView(
+                    detail: KotozuteDetail(
+                        items: [
+                            Kotozute(id: "d1", body: "急いでたのに駅まで送ってくれた。ほんとうに助かった。", createdAt: Date()),
+                            Kotozute(id: "d2", body: "洗い物、いつのまにか終わってた", createdAt: Date()),
+                        ],
+                        startIndex: 0,
+                        title: "ひとりのことづて",
+                        colorOffset: 0,
+                        isEditable: true
+                    )
+                )
+            )
         case "wall":
             return AnyView(OnboardingView(onStart: {}, onSignIn: {}, startPage: 3))
         // 招待画面は「登録済み・ペア未成立」でないと出ないので確認しづらい。

@@ -77,7 +77,7 @@ struct ViewingView: View {
                         onRead: { fullScreen = .detail(partnerDetail(wrapped.items)) }
                     )
                 case let .detail(detail):
-                    KotozuteDetailView(detail: detail, onCompose: onWrite)
+                    KotozuteDetailView(detail: detail)
                 }
             }
         }
@@ -176,8 +176,7 @@ struct ViewingView: View {
                             startIndex: wall.partner.firstIndex(of: tapped) ?? 0,
                             title: "\(store.partnerName)のことづて",
                             colorOffset: 2,
-                            isEditable: false,
-                            showsCompose: false
+                            isEditable: false
                         ))
                     }
                 }
@@ -196,8 +195,7 @@ struct ViewingView: View {
                         startIndex: items.firstIndex(of: tapped) ?? 0,
                         title: myTitle,
                         colorOffset: 4,
-                        isEditable: false,
-                        showsCompose: false
+                        isEditable: false
                     ))
                 }
             }
@@ -218,8 +216,7 @@ struct ViewingView: View {
             startIndex: tapped.flatMap { items.firstIndex(of: $0) } ?? 0,
             title: "\(store.partnerName)のことづて",
             colorOffset: 2,
-            isEditable: false,
-            showsCompose: true
+            isEditable: false
         )
     }
 

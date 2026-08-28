@@ -145,8 +145,7 @@ struct ComposeView: View {
                         startIndex: store.myKotozute.firstIndex(of: tapped) ?? 0,
                         title: "今週のことづて",
                         colorOffset: 0,
-                        isEditable: true,
-                        showsCompose: false
+                        isEditable: true
                     )
                 }
             }
