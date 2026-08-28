@@ -49,8 +49,9 @@ targets:
     entitlements:
       path: App/Kotozute.entitlements
       properties:
-        # 実機での開発用。App Store 配布時は production になる。
-        aps-environment: development
+        # ビルド構成ごとに出し分ける。Debug=development / Release=production。
+        # 実機に Xcode から入れたものと、配布したものでは APNs のエンドポイントが別物。
+        aps-environment: $(APS_ENVIRONMENT)
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.kotozute.app
@@ -65,3 +66,8 @@ targets:
         # iPhone のみ。
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_VERSION: "5.0"
+      configs:
+        Debug:
+          APS_ENVIRONMENT: development
+        Release:
+          APS_ENVIRONMENT: production

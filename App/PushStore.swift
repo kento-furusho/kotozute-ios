@@ -1,4 +1,5 @@
 import Foundation
+import KotozuteAPI
 import Observation
 import UIKit
 import UserNotifications
@@ -53,6 +54,18 @@ final class PushStore {
     /// AppDelegate から呼ばれる。
     func received(deviceToken data: Data) {
         deviceToken = data.map { String(format: "%02x", $0) }.joined()
+    }
+
+    /// このビルドがどちらの APNs に繋がるか。entitlements の aps-environment と揃える。
+    ///
+    /// サーバーはトークンを見ても判別できないので、ここで決めて渡す。
+    /// 取り違えると APNs に拒否され、エンドポイントが無効化されて二度と届かない。
+    static var environment: APNsEnvironment {
+        #if DEBUG
+        .sandbox
+        #else
+        .production
+        #endif
     }
 }
 
