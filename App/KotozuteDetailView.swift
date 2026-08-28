@@ -7,7 +7,7 @@ import SwiftUI
 ///   - 大きな付箋を1枚だけ出す
 ///   - 左右スワイプで次のことづてへ
 ///   - 枚数インジケータ（何枚あるかは、開いた本人には見えていい）
-///   - 相手の分には「今週分のことづてを書く」、自分の分には「書き直す」
+///   - 自分の分には「書き直す」。閉じる導線は下のボタンだけにする
 struct KotozuteDetail: Identifiable {
     let id = UUID()
     let items: [Kotozute]
@@ -16,18 +16,10 @@ struct KotozuteDetail: Identifiable {
     let colorOffset: Int
     /// 自分が書くサイクルに書いた分だけ書き直せる。
     let isEditable: Bool
-    /// 相手の分を読んでいるとき。書く画面への導線を出す。
-    ///
-    /// ここで書いたものは「読んでいることづてへの返事」ではない。
-    /// 読んでいるのは閉じたサイクルの分で、いま書いたものは書くサイクルに入り、
-    /// 相手が読めるのは次のオープン。紐付けはデータにも無い。
-    let showsCompose: Bool
 }
 
 struct KotozuteDetailView: View {
     let detail: KotozuteDetail
-    /// 「今週分のことづてを書く」。閉じてから書く画面へ。
-    let onCompose: () -> Void
     /// 「書き直す」。対象のことづてを渡す。
     let onEdit: (Kotozute) -> Void
 
@@ -36,11 +28,9 @@ struct KotozuteDetailView: View {
 
     init(
         detail: KotozuteDetail,
-        onCompose: @escaping () -> Void = {},
         onEdit: @escaping (Kotozute) -> Void = { _ in }
     ) {
         self.detail = detail
-        self.onCompose = onCompose
         self.onEdit = onEdit
         _index = State(initialValue: detail.startIndex)
     }
@@ -88,12 +78,6 @@ struct KotozuteDetailView: View {
             .background(Theme.background.ignoresSafeArea())
             .navigationTitle(detail.title)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("とじる") { dismiss() }
-                        .foregroundStyle(Theme.inkSoft)
-                }
-            }
         }
     }
 
@@ -105,40 +89,37 @@ struct KotozuteDetailView: View {
             .foregroundStyle(Theme.inkSoft)
     }
 
-    @ViewBuilder
+    /// 閉じる導線は下のボタン1つに絞る。上下に散らすと、どちらを押すのか迷う。
     private var actions: some View {
-        if detail.showsCompose {
-            Button {
-                dismiss()
-                onCompose()
-            } label: {
-                Text("今週分のことづてを書く")
+        VStack(spacing: 0) {
+            if detail.isEditable, detail.items.indices.contains(index) {
+                let item = detail.items[index]
+                Button {
+                    dismiss()
+                    onEdit(item)
+                } label: {
+                    Text("書き直す")
+                        .font(Theme.font(17, weight: .bold))
+                        .foregroundStyle(Theme.accent)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(.white.opacity(0.7))
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(Theme.line, lineWidth: 1))
+                }
+                .padding(.bottom, 14)
+            }
+
+            // オープンの演出の主ボタンと同じ形にする。閉じる導線がここだけなので、
+            // 押せる場所として見えていてほしい。色は主張しないグレーにする。
+            Button { dismiss() } label: {
+                Text("とじる")
                     .font(Theme.font(17, weight: .bold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(Theme.accent)
+                    .background(Theme.inkSoft.opacity(0.55))
                     .clipShape(Capsule())
-            }
-
-            Button("壁に残しておく") { dismiss() }
-                .font(Theme.font(14))
-                .foregroundStyle(Theme.inkSoft)
-                .padding(.top, 14)
-        } else if detail.isEditable, detail.items.indices.contains(index) {
-            let item = detail.items[index]
-            Button {
-                dismiss()
-                onEdit(item)
-            } label: {
-                Text("書き直す")
-                    .font(Theme.font(17, weight: .bold))
-                    .foregroundStyle(Theme.accent)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(.white.opacity(0.7))
-                    .clipShape(Capsule())
-                    .overlay(Capsule().stroke(Theme.line, lineWidth: 1))
             }
         }
     }

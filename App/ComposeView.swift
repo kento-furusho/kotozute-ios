@@ -16,25 +16,32 @@ struct ComposeView: View {
     @State private var editError: String?
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                editor
-                    .padding(.top, 20)
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    // 見出しとオープン日だけを先に出す。いつ閉じるのかが分かった状態で書ける。
+                    header
+                        .padding(.top, 20)
 
-                WritingHint()
-                    .padding(.top, 18)
+                    editor
+                        .padding(.top, 20)
 
-                saveButton
-                    .padding(.top, 18)
+                    WritingHint()
+                        .padding(.top, 18)
 
-                Divider()
-                    .padding(.top, 32)
-
-                myKotozuteSection
-                    .padding(.top, 28)
+                    // 書きためた分は書く場所の下。スクロールすれば見える、くらいの扱いにする。
+                    myKotozuteSection
+                        .padding(.top, 32)
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 24)
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 24)
+
+            // 貼るボタンは画面の下に固定する。書いている途中でも位置が動かない。
+            // キーボードが出たときは SwiftUI が持ち上げるので、隠れない。
+            saveButton
+                .padding(.horizontal, 20)
+                .padding(.bottom, 22)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.background.ignoresSafeArea())
@@ -71,7 +78,9 @@ struct ComposeView: View {
                 .padding(12)
                 .focused($isFocused)
         }
-        .frame(height: 200)
+        // 付箋は正方形に近いほうがそれらしく見える。横幅は画面に合わせて伸びるので、
+        // 高さで寄せる。
+        .frame(height: 290)
         .background(Theme.stickyPaper(at: 0).gradient)
         .clipShape(RoundedRectangle(cornerRadius: 3))
         .shadow(color: Theme.ink.opacity(0.24), radius: 9, y: 7)
@@ -91,7 +100,7 @@ struct ComposeView: View {
                 if isSaving {
                     ProgressView().tint(.white)
                 } else {
-                    Text("壁に貼る").font(Theme.font(17, weight: .bold))
+                    Text("貼っておく").font(Theme.font(17, weight: .bold))
                 }
             }
             .foregroundStyle(.white)
@@ -103,9 +112,9 @@ struct ComposeView: View {
         .disabled(!canSave || isSaving)
     }
 
-    /// 書きためている分。オープンまでは自分だけに見えている。
-    private var myKotozuteSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
+    /// 見出しといつオープンするか。書く前に見えていてほしい情報だけを置く。
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 6) {
             Text("今週のことづて")
                 .font(Theme.font(20, weight: .bold))
                 .foregroundStyle(Theme.ink)
@@ -118,26 +127,25 @@ struct ComposeView: View {
                     .font(Theme.font(13, weight: .medium))
                     .foregroundStyle(Theme.accent)
             }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
 
+    /// 書きためている分。オープンまでは自分だけに見えている。
+    private var myKotozuteSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
             if store.myKotozute.isEmpty {
-                Text("ありがとうと思ったときに、ひとこと。\nそれで十分。")
+                Text("ありがとうと思ったときに、ひとこと。")
                     .font(Theme.font(15))
                     .foregroundStyle(Theme.inkSoft)
-                    .lineSpacing(4)
-                    .padding(.top, 4)
             } else {
-                Text("その日まで、自分だけに。")
-                    .font(Theme.font(13))
-                    .foregroundStyle(Theme.inkSoft)
-
                 StickyNoteList(items: store.myKotozute) { tapped in
                     detail = KotozuteDetail(
                         items: store.myKotozute,
                         startIndex: store.myKotozute.firstIndex(of: tapped) ?? 0,
                         title: "今週のことづて",
                         colorOffset: 0,
-                        isEditable: true,
-                        showsCompose: false
+                        isEditable: true
                     )
                 }
             }

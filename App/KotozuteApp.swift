@@ -1,3 +1,4 @@
+import KotozuteAPI
 import SwiftUI
 
 @main
@@ -33,6 +34,26 @@ struct KotozuteApp: App {
             return AnyView(OnboardingView(onStart: {}, onSignIn: {}, startPage: 1))
         case "exchange":
             return AnyView(OnboardingView(onStart: {}, onSignIn: {}, startPage: 2))
+        // オープンの演出。本物と同じく fullScreenCover の中に出す。
+        // 直に置くと dismiss() の相手がおらず、「とじる」も「1枚ずつ読む」も効かない。
+        case "reveal":
+            return AnyView(RevealPreviewHost())
+        // 1枚ずつ読む画面。自分の分（書き直せる）として開く。
+        case "detail":
+            return AnyView(
+                KotozuteDetailView(
+                    detail: KotozuteDetail(
+                        items: [
+                            Kotozute(id: "d1", body: "急いでたのに駅まで送ってくれた。ほんとうに助かった。", createdAt: Date()),
+                            Kotozute(id: "d2", body: "洗い物、いつのまにか終わってた", createdAt: Date()),
+                        ],
+                        startIndex: 0,
+                        title: "ひとりのことづて",
+                        colorOffset: 0,
+                        isEditable: true
+                    )
+                )
+            )
         case "wall":
             return AnyView(OnboardingView(onStart: {}, onSignIn: {}, startPage: 3))
         // 招待画面は「登録済み・ペア未成立」でないと出ないので確認しづらい。
@@ -90,3 +111,34 @@ struct KotozuteApp: App {
         }
     }
 }
+
+#if DEBUG
+/// 確認用。演出を本物と同じ出し方（fullScreenCover）で見るための入れ物。
+private struct RevealPreviewHost: View {
+    @State private var isShowing = true
+
+    var body: some View {
+        ZStack {
+            Theme.background.ignoresSafeArea()
+            VStack(spacing: 14) {
+                Text("とじた")
+                    .font(Theme.font(15))
+                    .foregroundStyle(Theme.inkSoft)
+                Button("もう一度見る") { isShowing = true }
+                    .font(Theme.font(15, weight: .bold))
+                    .foregroundStyle(Theme.accent)
+            }
+        }
+        .fullScreenCover(isPresented: $isShowing) {
+            RevealView(
+                partnerName: "ゆい",
+                items: [
+                    Kotozute(id: "r1", body: "コーヒー淹れてくれてありがとう", createdAt: Date()),
+                    Kotozute(id: "r2", body: "昨日の話、ちゃんと聞いてくれてうれしかった", createdAt: Date()),
+                    Kotozute(id: "r3", body: "洗い物、いつのまにか終わってた", createdAt: Date()),
+                ]
+            ) {}
+        }
+    }
+}
+#endif

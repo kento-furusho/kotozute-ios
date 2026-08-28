@@ -64,7 +64,7 @@ struct FirstKotozuteView: View {
                     if isSaving {
                         ProgressView().tint(.white)
                     } else {
-                        Text("壁に貼る").font(Theme.font(17, weight: .bold))
+                        Text("貼っておく").font(Theme.font(17, weight: .bold))
                     }
                 }
                 .foregroundStyle(.white)

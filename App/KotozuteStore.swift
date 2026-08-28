@@ -19,7 +19,7 @@ final class KotozuteStore {
     private(set) var phase: Phase = .loading
     private(set) var myKotozute: [Kotozute] = []
     private(set) var homeState: HomeState?
-    /// 自分の表示名。相手の画面では「◯◯からのことづて」の◯◯になる。
+    /// 自分の表示名。相手の画面では「◯◯のことづて」の◯◯になる。
     private(set) var myName = ""
     private(set) var partnerName = ""
     private(set) var timezone = TimeZone(identifier: "Asia/Tokyo") ?? .current
@@ -47,7 +47,10 @@ final class KotozuteStore {
 
     func load() async {
         guard let client else { return }
-        phase = .loading
+        // すでに表示できている状態なら .loading に戻さない。
+        // 戻すと画面がいったん外れて作り直され、開いているタブが既定値に戻る
+        // （ことづてを書いたあと「書く」から「見る」へ飛んでいたのはこれが原因）。
+        if phase != .ready { phase = .loading }
         do {
             // 1. 自分の情報。未登録なら 404 が返るので、表示名の登録へ回す。
             let me: MeResponse

@@ -36,7 +36,7 @@ struct OnboardingView: View {
                 ).tag(2)
                 concept(
                     art: { WallPreview() },
-                    title: "壁にのこる",
+                    title: "ふたりの壁",
                     body: "オープンした分は、あとから何度でも読み返せる。\n週ごとにさかのぼれる。"
                 ).tag(3)
             }

@@ -20,11 +20,21 @@ struct RevealItems: Identifiable {
 struct RevealView: View {
     let partnerName: String
     let items: [Kotozute]
+    /// 実際にオープンを押したときに呼ぶ。
+    /// この回を「見た」と記録するのはここ。押さずに閉じた人には、次にまた出す
+    /// （週に一度きりの場面なので、開かずに消えたことにしない）。
+    var onOpened: () -> Void = {}
     /// 「1枚ずつ読む」。閉じてから読む画面へ。
     let onRead: () -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @State private var revealed = false
+    /// 晴れ方の段階。0=ぼかし／1=うっすら形が見える／2=くっきり。
+    ///
+    /// 一息で晴らすと「切り替わった」だけになる。途中に一段はさむと、
+    /// 近づいていく時間ができる。
+    @State private var stage = 0
+    /// 見出しは開いた直後に出す。晴らすかどうかは本人に任せる。
+    @State private var headerShown = false
     @State private var sparklePhase = 0.0
 
     var body: some View {
@@ -40,19 +50,36 @@ struct RevealView: View {
 
             Spacer(minLength: 24)
 
-            Button {
-                dismiss()
-                onRead()
-            } label: {
-                Text("1枚ずつ読む")
-                    .font(Theme.font(17, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(Theme.accent)
-                    .clipShape(Capsule())
+            actions
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Theme.background.ignoresSafeArea())
+        .task {
+            // 見出しだけ先に出す。付箋はぼかしたまま、押されるのを待つ。
+            try? await Task.sleep(for: .milliseconds(260))
+            withAnimation(.easeOut(duration: 0.5)) { headerShown = true }
+        }
+    }
+
+    /// オープンを押すまでは晴らさない。週に一度の場面を、本人の操作で始めてもらう。
+    @ViewBuilder
+    private var actions: some View {
+        VStack(spacing: 0) {
+            if stage == 2 {
+                Button {
+                    dismiss()
+                    onRead()
+                } label: {
+                    primaryLabel("1枚ずつ読む")
+                }
+            } else {
+                Button(action: open) {
+                    primaryLabel("オープンする")
+                }
+                // 晴らしている最中の二度押しを防ぐ。
+                .disabled(stage != 0)
+                .opacity(stage == 0 ? 1 : 0.5)
             }
-            .padding(.horizontal, 28)
 
             Button("とじる") { dismiss() }
                 .font(Theme.font(14))
@@ -60,16 +87,32 @@ struct RevealView: View {
                 .padding(.top, 14)
                 .padding(.bottom, 28)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Theme.background.ignoresSafeArea())
-        .task {
-            // 開いた瞬間ではなく、ひと呼吸おいてから晴らす。
-            try? await Task.sleep(for: .milliseconds(260))
-            withAnimation(.easeOut(duration: 1.1)) { revealed = true }
+        .padding(.horizontal, 28)
+    }
+
+    private func primaryLabel(_ title: String) -> some View {
+        Text(title)
+            .font(Theme.font(17, weight: .bold))
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(Theme.accent)
+            .clipShape(Capsule())
+    }
+
+    private func open() {
+        onOpened()
+        Task {
+            // 一段目。付箋の形と色がうっすら分かるところまで。
+            withAnimation(.easeOut(duration: 0.7)) { stage = 1 }
+            withAnimation(.easeOut(duration: 0.6)) { sparklePhase = 1 }
+
+            // 間をおいてから二段目。ここで初めて読める。
+            try? await Task.sleep(for: .milliseconds(950))
+            withAnimation(.easeOut(duration: 0.9)) { stage = 2 }
 
             // 灯してから消す。出しっぱなしにすると飾りとして残ってしまう。
-            withAnimation(.easeOut(duration: 0.6)) { sparklePhase = 1 }
-            try? await Task.sleep(for: .milliseconds(1100))
+            try? await Task.sleep(for: .milliseconds(700))
             withAnimation(.easeIn(duration: 0.7)) { sparklePhase = 0 }
         }
     }
@@ -90,21 +133,47 @@ struct RevealView: View {
                 .font(Theme.font(28, weight: .bold))
                 .foregroundStyle(Theme.ink)
 
-            Text("\(partnerName)からの分がそろった。")
+            // 見出しが「今週のことづて」なので、ここは誰のものかと、
+            // 読める状態になったことだけを言う。
+            Text("\(partnerName)のことづてが読めるようになりました")
                 .font(Theme.font(14))
                 .foregroundStyle(Theme.inkSoft)
         }
-        .opacity(revealed ? 1 : 0)
-        .animation(.easeOut(duration: 0.5), value: revealed)
+        .opacity(headerShown ? 1 : 0)
     }
 
-    /// ぼかしから現れる付箋。中身はまだ読ませない（読むのは次の画面）。
+    /// ぼかしから現れる付箋。押されてから二段階で晴らす。
+    /// 一段目では形と色だけ、二段目で文字が読めるようになる。
     private var notes: some View {
         StickyNoteList(items: Array(items.prefix(4)), colorOffset: 2)
             .padding(.horizontal, 24)
-            .blur(radius: revealed ? 0 : 6)
-            .scaleEffect(revealed ? 1 : 0.96)
-            .opacity(revealed ? 1 : 0.6)
+            .blur(radius: blurRadius)
+            .scaleEffect(scale)
+            .opacity(noteOpacity)
+    }
+
+    private var blurRadius: CGFloat {
+        switch stage {
+        case 0: 12
+        case 1: 4
+        default: 0
+        }
+    }
+
+    private var scale: CGFloat {
+        switch stage {
+        case 0: 0.94
+        case 1: 0.975
+        default: 1
+        }
+    }
+
+    private var noteOpacity: Double {
+        switch stage {
+        case 0: 0.4
+        case 1: 0.8
+        default: 1
+        }
     }
 
     /// 光の粒。位置は固定にして、毎回同じ見え方にする（乱数だとぶれる）。
