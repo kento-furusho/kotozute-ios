@@ -95,6 +95,14 @@ public struct KotozuteClient: Sendable {
         try await send(.patch, "/me", body: body)
     }
 
+    /// アカウントを消す。取り返しがつかない。
+    ///
+    /// 消えるのは自分のことづてと自分のアカウント。相手が書いた分は相手のものなので残る。
+    /// ペアは解消され、相手はまた誰かを招待できる状態に戻る。
+    public func deleteMe() async throws {
+        try await sendNoContent(.delete, "/me")
+    }
+
     // MARK: - 招待
 
     public func createInvite() async throws -> CreateInviteResponse {
@@ -190,12 +198,18 @@ public struct KotozuteClient: Sendable {
         case get = "GET"
         case post = "POST"
         case patch = "PATCH"
+        case delete = "DELETE"
     }
 
     private struct EmptyBody: Encodable {}
 
     private func escape(_ value: String) -> String {
         value.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? value
+    }
+
+    /// 中身を返さない呼び出し（204）。デコードしないぶんだけ分けている。
+    private func sendNoContent(_ method: Method, _ path: String) async throws {
+        _ = try await perform(method, path, body: Optional<EmptyBody>.none, query: [], authenticated: true)
     }
 
     private func send<Response: Decodable>(
@@ -214,6 +228,22 @@ public struct KotozuteClient: Sendable {
         query: [URLQueryItem] = [],
         authenticated: Bool = true
     ) async throws -> Response {
+        let data = try await perform(method, path, body: body, query: query, authenticated: authenticated)
+        do {
+            return try Self.decoder.decode(Response.self, from: data)
+        } catch {
+            throw APIError.decoding(message: String(describing: error))
+        }
+    }
+
+    /// 組み立てから送信・エラー判定まで。デコードは呼び出し側に任せる。
+    private func perform<Body: Encodable>(
+        _ method: Method,
+        _ path: String,
+        body: Body?,
+        query: [URLQueryItem],
+        authenticated: Bool
+    ) async throws -> Data {
         guard var components = URLComponents(
             url: baseURL.appendingPathComponent(path),
             resolvingAgainstBaseURL: false
@@ -255,10 +285,6 @@ public struct KotozuteClient: Sendable {
             throw APIError.from(statusCode: http.statusCode, message: message)
         }
 
-        do {
-            return try Self.decoder.decode(Response.self, from: data)
-        } catch {
-            throw APIError.decoding(message: String(describing: error))
-        }
+        return data
     }
 }

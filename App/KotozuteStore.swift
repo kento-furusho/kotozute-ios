@@ -128,6 +128,21 @@ final class KotozuteStore {
         }
     }
 
+    /// アカウントを消す。成功したら true。
+    ///
+    /// 消えるのは自分のことづてと自分のアカウント。相手が書いた分は相手のものなので残る。
+    /// ペアは解消され、相手はまた誰かを招待できる状態に戻る。
+    func deleteAccount() async -> Bool {
+        guard let client else { return false }
+        do {
+            try await client.deleteMe()
+            return true
+        } catch {
+            phase = .failed(Self.message(for: error))
+            return false
+        }
+    }
+
     func registerProfile(displayName: String) async {
         guard let client else { return }
         do {
