@@ -127,6 +127,14 @@ public struct KotozuteClient: Sendable {
         try await send(.get, "/pair")
     }
 
+    /// ペアを解消する。アカウントは残る。
+    ///
+    /// ことづてはどちらの分も消えない。ただし解消の時刻が記録され、
+    /// 次に誰かとペアを組んでも、それより前に書いた分は相手に渡らない。
+    public func deletePair() async throws {
+        try await sendNoContent(.delete, "/pair")
+    }
+
     public func updatePair(_ body: UpdatePairRequest) async throws -> UpdatePairResponse {
         try await send(.patch, "/pair", body: body)
     }
