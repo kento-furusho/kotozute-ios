@@ -12,6 +12,10 @@ enum Config {
 
     /// 規約とプライバシーポリシーの公開先。kotozute リポジトリの web/ を配信している。
     /// App Store の審査では、アプリ内からここへ辿れることを見られる。
-    static let termsURL = URL(string: "https://kotozute.app/terms.html")!
-    static let privacyURL = URL(string: "https://kotozute.app/privacy.html")!
+    ///
+    /// **拡張子は付けない。** Cloudflare の静的アセット配信は .html 付きの
+    /// リクエストを拡張子なしへ 307 で正規化するため、付けると毎回
+    /// リダイレクトを1回挟むことになる。
+    static let termsURL = URL(string: "https://kotozute.app/terms")!
+    static let privacyURL = URL(string: "https://kotozute.app/privacy")!
 }
