@@ -142,6 +142,24 @@ struct SettingsView: View {
 
                 Divider().padding(.vertical, 28)
 
+                Text("このアプリについて")
+                    .font(Theme.font(18, weight: .bold))
+                    .foregroundStyle(Theme.ink)
+
+                // App Store の審査で、アプリ内から辿れることを見られる。
+                // Safari で開く（アプリ内に埋め込むと、リンク先の変更に追随できない）。
+                Link("利用規約", destination: Config.termsURL)
+                    .font(Theme.font(15))
+                    .foregroundStyle(Theme.accent)
+                    .padding(.top, 14)
+
+                Link("プライバシーポリシー", destination: Config.privacyURL)
+                    .font(Theme.font(15))
+                    .foregroundStyle(Theme.accent)
+                    .padding(.top, 12)
+
+                Divider().padding(.vertical, 28)
+
                 Text("アカウント")
                     .font(Theme.font(18, weight: .bold))
                     .foregroundStyle(Theme.ink)
