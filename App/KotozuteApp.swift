@@ -20,7 +20,7 @@ struct KotozuteApp: App {
     /// 引数なしの通常起動でも `if let` が成立して真っ白な画面になる。
     /// AnyView で受けて、返さないときは明示的に nil を返す。
     ///
-    ///   xcrun simctl launch <udid> dev.kotozute.app --screen welcome|concept|reveal|detail|invite|invite-landing
+    ///   xcrun simctl launch <udid> dev.kotozute.app --screen welcome|concept|auth|reveal|detail|invite|invite-landing
     private static var previewScreen: AnyView? {
         #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
@@ -32,6 +32,10 @@ struct KotozuteApp: App {
             return AnyView(OnboardingView(onStart: {}, onSignIn: {}))
         case "concept":
             return AnyView(OnboardingView(onStart: {}, onSignIn: {}, startPage: 1))
+        // 登録画面。ふだんはオンボーディングから「はじめる」を押さないと出ない。
+        case "auth":
+            guard let auth = try? AuthStore() else { return nil }
+            return AnyView(AuthView(auth: auth, startsRegistering: true))
         // オープンの演出。本物と同じく fullScreenCover の中に出す。
         // 直に置くと dismiss() の相手がおらず、「とじる」も「1枚ずつ読む」も効かない。
         case "reveal":
