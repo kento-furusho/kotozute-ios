@@ -12,26 +12,30 @@ struct KotozuteApp: App {
     @State private var router = InviteRouter()
 
     /// シミュレータでの確認用。オンボーディングは通常サインアウトしないと見られない。
-    ///   xcrun simctl launch <udid> dev.kotozute.app --screen welcome|concept
-    @ViewBuilder
+    ///
     /// 確認用の画面を直接開く。指定が無ければ nil を返し、通常の起動に任せる。
     ///
     /// @ViewBuilder は使わない。分岐を包んだ結果が「中身が空の非 nil」になり、
     /// 引数なしの通常起動でも `if let` が成立して真っ白な画面になる。
     /// AnyView で受けて、返さないときは明示的に nil を返す。
     ///
-    ///   xcrun simctl launch <udid> dev.kotozute.app --screen welcome|concept|reveal|detail|invite|invite-landing
+    ///   xcrun simctl launch <udid> dev.kotozute.app --screen welcome|concept|auth|signin|reveal|detail|invite|invite-landing
     private static var previewScreen: AnyView? {
         #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
         guard let index = arguments.firstIndex(of: "--screen"), index + 1 < arguments.count else {
             return nil
         }
-        switch arguments[index + 1] {
+        let screen = arguments[index + 1]
+        switch screen {
         case "welcome":
             return AnyView(OnboardingView(onStart: {}, onSignIn: {}))
         case "concept":
             return AnyView(OnboardingView(onStart: {}, onSignIn: {}, startPage: 1))
+        // 登録画面。ふだんはオンボーディングから「はじめる」を押さないと出ない。
+        case "auth", "signin":
+            guard let auth = try? AuthStore() else { return nil }
+            return AnyView(AuthView(auth: auth, startsRegistering: screen == "auth"))
         // オープンの演出。本物と同じく fullScreenCover の中に出す。
         // 直に置くと dismiss() の相手がおらず、「とじる」も「1枚ずつ読む」も効かない。
         case "reveal":

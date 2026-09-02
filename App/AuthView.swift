@@ -22,11 +22,11 @@ struct AuthView: View {
                 Text("ことづて")
                     .font(Theme.font(34, weight: .bold))
                     .foregroundStyle(Theme.ink)
-                Text("いいな、と思ったことを書きためて、\n週に一度ふたりで読む。")
-                    .font(Theme.font(15))
+                // オンボーディングのサブタイトルと同じ言葉にする。
+                // ここで3つ目の言い回しを出すと、同じ内容を新情報として読ませることになる。
+                Text("大切な人とありがとうをためるアプリ")
+                    .font(Theme.font(14, weight: .medium))
                     .foregroundStyle(Theme.inkSoft)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(4)
             }
 
             VStack(spacing: 12) {
@@ -96,7 +96,7 @@ struct AuthView: View {
                 if auth.isWorking {
                     ProgressView().tint(.white)
                 } else {
-                    Text(isRegistering ? "登録する" : "はじめる")
+                    Text(isRegistering ? "登録する" : "ログインする")
                         .font(Theme.font(17, weight: .bold))
                 }
             }
