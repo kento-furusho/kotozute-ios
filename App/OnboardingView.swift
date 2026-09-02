@@ -94,17 +94,27 @@ struct OnboardingView: View {
         .padding(.horizontal, 28)
     }
 
+    /// 見本のことづて。紙の大きさは画面の幅から決める。
+    ///
+    /// 固定にすると、iPhone SE のような狭い端末で2枚が収まらない
+    /// （132×2＋間隔12 = 276 に対し、使える幅は264）。
     private var samples: some View {
-        VStack(spacing: 14) {
-            HStack(alignment: .top, spacing: 12) {
-                SampleNote(text: "おかえりの声、\n元気だった", paperIndex: 0, tilt: -3)
-                    .appearsInOrder(3)
-                SampleNote(text: "プリン、\nゆずってくれた", paperIndex: 2, tilt: 4)
-                    .appearsInOrder(4)
+        GeometryReader { geometry in
+            let side = (geometry.size.width - 12) / 2
+            VStack(spacing: 14) {
+                HStack(alignment: .top, spacing: 12) {
+                    SampleNote(text: "洗い物してくれてありがとう", paperIndex: 0, tilt: -3, side: side)
+                        .appearsInOrder(3)
+                    SampleNote(text: "昨日作ってくれたカレーがおいしかった！", paperIndex: 2, tilt: 4, side: side)
+                        .appearsInOrder(4)
+                }
+                SampleNote(text: "何にでも好奇心があっていい！", paperIndex: 1, tilt: -2, side: side)
+                    .appearsInOrder(5)
             }
-            SampleNote(text: "寝る前の「おつかれ」", paperIndex: 1, tilt: -2)
-                .appearsInOrder(5)
+            .frame(maxWidth: .infinity)
         }
+        // 紙2枚ぶんの高さ（幅と同じ）に間隔を足した分。ほぼ正方形になる。
+        .aspectRatio(1, contentMode: .fit)
     }
 
     /// 2枚目以降。図が説明の大半を引き受け、文章は最小にする。
