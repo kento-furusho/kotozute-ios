@@ -202,7 +202,7 @@ struct InviteView: View {
                     .foregroundStyle(Theme.ink)
                     .padding(.top, 48)
 
-                Text("リンクを送ると、それだけでふたりの壁になる。")
+                Text("リンクを送れば、それだけではじまる。")
                     .font(Theme.font(15))
                     .foregroundStyle(Theme.inkSoft)
                     .multilineTextAlignment(.center)
