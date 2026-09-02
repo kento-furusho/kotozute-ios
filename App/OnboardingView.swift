@@ -75,7 +75,7 @@ struct OnboardingView: View {
                 .padding(.top, 10)
                 .appearsInOrder(1)
 
-            Text("「ありがとう」「いいな」と思ったらことづてを送ろう。")
+            Text("「ありがとう」「いいな」と思ったら\nことづてを送ろう。")
                 .font(Theme.font(16))
                 .foregroundStyle(Theme.inkSoft)
                 .multilineTextAlignment(.center)
