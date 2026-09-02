@@ -12,9 +12,11 @@ struct SampleNote: View {
     let text: String
     let paperIndex: Int
     let tilt: Double
-    var width: CGFloat = 104
-    /// 付箋は正方形に近いほうがそれらしい。本文が短くても高さを保つ。
-    var minHeight: CGFloat = 104
+    /// 紙の一辺。付箋は正方形。
+    ///
+    /// 余白を含めた紙全体にかける。本文側に幅を与えて外から高さだけ足す形だと、
+    /// 文の長さで縦横比が変わってしまう。
+    var side: CGFloat = 132
 
     var body: some View {
         Text(text)
@@ -22,15 +24,15 @@ struct SampleNote: View {
             .foregroundStyle(Theme.ink)
             .lineSpacing(4)
             .multilineTextAlignment(.leading)
-            .frame(width: width, alignment: .topLeading)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
             .padding(.horizontal, 14)
             .padding(.top, 22)
             .padding(.bottom, 14)
-            // 高さは余白を含めた紙全体にかける。本文が1行でも潰れない。
-            .frame(minHeight: minHeight, alignment: .topLeading)
+            .frame(width: side, height: side, alignment: .topLeading)
             .stickyPaper(Theme.stickyPaper(at: paperIndex), tilt: tilt)
     }
 }
+
 
 /// 1週間の帯。オープンの日だけが色付きで、そこまで書きためることを示す。
 ///

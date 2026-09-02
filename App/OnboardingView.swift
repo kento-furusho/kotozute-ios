@@ -92,7 +92,7 @@ struct OnboardingView: View {
                 SampleNote(text: "プリン、\nゆずってくれた", paperIndex: 2, tilt: 4)
                     .appearsInOrder(3)
             }
-            SampleNote(text: "寝る前の「おつかれ」", paperIndex: 1, tilt: -2, width: 132, minHeight: 76)
+            SampleNote(text: "寝る前の「おつかれ」", paperIndex: 1, tilt: -2)
                 .appearsInOrder(4)
         }
     }
