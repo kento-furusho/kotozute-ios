@@ -16,7 +16,7 @@ struct OnboardingView: View {
 
     @State private var page = 0
 
-    private static let pageCount = 4
+    private static let pageCount = 2
 
     var body: some View {
         VStack(spacing: 0) {
@@ -27,18 +27,8 @@ struct OnboardingView: View {
                 concept(
                     art: { WeekStrip() },
                     title: "週に一度のオープン",
-                    body: "書いたことづては、その日まで貼ったまま。\n決まった曜日に、その週ぶんがまとまる。"
+                    body: "たまったころに、ふりかえる。"
                 ).tag(1)
-                concept(
-                    art: { ExchangeDiagram() },
-                    title: "ことづての交換",
-                    body: "じぶんが書くと、あいてのことづても見られる。\n書かない週は、静かに待つだけでいい。"
-                ).tag(2)
-                concept(
-                    art: { WallPreview() },
-                    title: "ふたりの壁",
-                    body: "オープンした分は、あとから何度でも読み返せる。\n週ごとにさかのぼれる。"
-                ).tag(3)
             }
             .tabViewStyle(.page(indexDisplayMode: .always))
             .indexViewStyle(.page(backgroundDisplayMode: .interactive))
@@ -78,7 +68,7 @@ struct OnboardingView: View {
                 .foregroundStyle(Theme.ink)
                 .appearsInOrder(0)
 
-            Text("言いそこねた「ありがとう」を、\nことづてにして貼っておく。")
+            Text("「ありがとう」「いいな」と思ったらことづてを。")
                 .font(Theme.font(16))
                 .foregroundStyle(Theme.inkSoft)
                 .multilineTextAlignment(.center)
@@ -88,12 +78,6 @@ struct OnboardingView: View {
 
             samples
                 .padding(.top, 34)
-
-            Text("ふたりの壁に、静かにたまっていく。")
-                .font(Theme.font(15))
-                .foregroundStyle(Theme.inkSoft)
-                .padding(.top, 34)
-                .appearsInOrder(5)
 
             Spacer()
         }
