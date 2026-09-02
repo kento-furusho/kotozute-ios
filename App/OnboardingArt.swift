@@ -21,10 +21,10 @@ struct SampleNote: View {
     var body: some View {
         Text(text)
             // 改行は指定しない。端末の幅や文字サイズの設定で崩れるため、
-            // 収まる大きさにして折り返しは任せる。
-            .font(Theme.font(11))
+            // 紙のほうを画面に合わせて伸縮させ、折り返しは任せる。
+            .font(Theme.font(13))
             .foregroundStyle(Theme.ink)
-            .lineSpacing(3)
+            .lineSpacing(4)
             .multilineTextAlignment(.leading)
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .padding(.horizontal, 14)
