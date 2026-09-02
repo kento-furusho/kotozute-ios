@@ -96,7 +96,7 @@ struct AuthView: View {
                 if auth.isWorking {
                     ProgressView().tint(.white)
                 } else {
-                    Text(isRegistering ? "登録する" : "はじめる")
+                    Text(isRegistering ? "登録する" : "ログインする")
                         .font(Theme.font(17, weight: .bold))
                 }
             }
