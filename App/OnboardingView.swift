@@ -106,13 +106,10 @@ struct OnboardingView: View {
         VStack(spacing: 0) {
             Spacer()
 
-            art()
-                .frame(height: 190)
-
+            // 見出しと説明が先、図は後。読んでから絵で確かめる順にする。
             Text(title)
                 .font(Theme.font(28, weight: .bold))
                 .foregroundStyle(Theme.ink)
-                .padding(.top, 40)
 
             Text(body)
                 .font(Theme.font(16))
@@ -120,6 +117,10 @@ struct OnboardingView: View {
                 .multilineTextAlignment(.center)
                 .lineSpacing(6)
                 .padding(.top, 14)
+
+            art()
+                .frame(height: 190)
+                .padding(.top, 40)
 
             Spacer()
         }
