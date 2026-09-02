@@ -86,6 +86,9 @@ struct OnboardingView: View {
             samples
                 .padding(.top, 34)
 
+            // 下を厚くして、かたまりを上寄りに置く。
+            // 固定の余白にすると画面の大きさで位置が変わる。
+            Spacer()
             Spacer()
         }
         .padding(.horizontal, 28)
