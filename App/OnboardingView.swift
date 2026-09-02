@@ -68,17 +68,27 @@ struct OnboardingView: View {
                 .foregroundStyle(Theme.ink)
                 .appearsInOrder(0)
 
-            Text("「ありがとう」「いいな」と思ったらことづてを送ろう。")
+            // 誰と、何をするアプリなのかを1行で。App Store のサブタイトルにも使う。
+            Text("大切な人とありがとうをためるアプリ")
+                .font(Theme.font(14, weight: .medium))
+                .foregroundStyle(Theme.inkSoft)
+                .padding(.top, 10)
+                .appearsInOrder(1)
+
+            Text("「ありがとう」「いいな」と思ったら\nことづてを送ろう。")
                 .font(Theme.font(16))
                 .foregroundStyle(Theme.inkSoft)
                 .multilineTextAlignment(.center)
                 .lineSpacing(6)
-                .padding(.top, 14)
-                .appearsInOrder(1)
+                .padding(.top, 18)
+                .appearsInOrder(2)
 
             samples
                 .padding(.top, 34)
 
+            // 下を厚くして、かたまりを上寄りに置く。
+            // 固定の余白にすると画面の大きさで位置が変わる。
+            Spacer()
             Spacer()
         }
         .padding(.horizontal, 28)
@@ -88,12 +98,12 @@ struct OnboardingView: View {
         VStack(spacing: 14) {
             HStack(alignment: .top, spacing: 12) {
                 SampleNote(text: "おかえりの声、\n元気だった", paperIndex: 0, tilt: -3)
-                    .appearsInOrder(2)
-                SampleNote(text: "プリン、\nゆずってくれた", paperIndex: 2, tilt: 4)
                     .appearsInOrder(3)
+                SampleNote(text: "プリン、\nゆずってくれた", paperIndex: 2, tilt: 4)
+                    .appearsInOrder(4)
             }
             SampleNote(text: "寝る前の「おつかれ」", paperIndex: 1, tilt: -2)
-                .appearsInOrder(4)
+                .appearsInOrder(5)
         }
     }
 
@@ -106,13 +116,10 @@ struct OnboardingView: View {
         VStack(spacing: 0) {
             Spacer()
 
-            art()
-                .frame(height: 190)
-
+            // 見出しと説明が先、図は後。読んでから絵で確かめる順にする。
             Text(title)
                 .font(Theme.font(28, weight: .bold))
                 .foregroundStyle(Theme.ink)
-                .padding(.top, 40)
 
             Text(body)
                 .font(Theme.font(16))
@@ -120,6 +127,10 @@ struct OnboardingView: View {
                 .multilineTextAlignment(.center)
                 .lineSpacing(6)
                 .padding(.top, 14)
+
+            art()
+                .frame(height: 190)
+                .padding(.top, 40)
 
             Spacer()
         }
