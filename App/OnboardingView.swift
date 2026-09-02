@@ -97,12 +97,12 @@ struct OnboardingView: View {
     private var samples: some View {
         VStack(spacing: 14) {
             HStack(alignment: .top, spacing: 12) {
-                SampleNote(text: "おかえりの声、\n元気だった", paperIndex: 0, tilt: -3)
+                SampleNote(text: "ゴミ捨てして\nくれてありがとう", paperIndex: 0, tilt: -3)
                     .appearsInOrder(3)
-                SampleNote(text: "プリン、\nゆずってくれた", paperIndex: 2, tilt: 4)
+                SampleNote(text: "昨日作って\nくれたご飯\nおいしかった！", paperIndex: 2, tilt: 4)
                     .appearsInOrder(4)
             }
-            SampleNote(text: "寝る前の「おつかれ」", paperIndex: 1, tilt: -2)
+            SampleNote(text: "何にでも\n好奇心が\nあっていい！", paperIndex: 1, tilt: -2)
                 .appearsInOrder(5)
         }
     }
