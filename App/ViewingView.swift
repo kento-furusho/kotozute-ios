@@ -266,13 +266,17 @@ struct ViewingView: View {
     @ViewBuilder
     private var partnerPresence: some View {
         if state.showsPartnerPresence {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("\(store.partnerName)も、今週なにか書いている。")
-                    .font(Theme.font(15, weight: .medium))
-                    .foregroundStyle(Theme.ink)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                BlurredNotes(count: state.partnerWrittenCount)
+            // 見出しは解禁後と同じ「◯◯のことづて」。同じものが、読めるか読めないか
+            // だけ違う、という見え方にする。「なにか書いている」と言い換えていたが、
+            // 付箋の絵が出るようになって、絵が言っていることを文が繰り返すだけになった。
+            section("\(store.partnerName)のことづて") {
+                VStack(alignment: .leading, spacing: 12) {
+                    BlurredNotes(count: state.partnerWrittenCount)
+                    // 読めるとは言わない。自分が書かなければオープンしても読めない。
+                    Text("オープンの日を待っている。")
+                        .font(Theme.font(13))
+                        .foregroundStyle(Theme.inkSoft)
+                }
             }
         }
     }
