@@ -102,31 +102,47 @@ extension View {
     }
 }
 
-/// 気配の表示に使う、ぼかした付箋。
+/// 気配の表示に使う、ぼかした付箋の束。
 ///
 /// **中身は持たない。** サーバーはロック中に相手の本文を返さないし、枚数も返さない。
 /// だから本文らしきものを描かず、線の帯だけを置いてぼかす。
 /// 偽の文章を敷いてぼかすと、解像度を上げれば読めてしまう見た目になり、
 /// 「本当は持っているのに隠している」という誤解を招く。
 ///
-/// 枚数は**常に2枚**で、相手が何枚書いたかとは関係がない。
-/// 枚数を映すと「存在のみ伝える」という決めごとが崩れる。
+/// **重ねるのは、数を数えさせないため。** 並べて置くと枚数を読み取ろうとするし、
+/// 実際の枚数と食い違えば嘘になる。重ねれば後ろは縁しか見えず、
+/// 「何かある」だけが伝わる。枚数は点数表になるので出さない
+/// （プライバシーポリシーにも「書いた枚数など、本文以外の情報も
+/// 相手には表示されません」と書いてある）。
 struct BlurredNotes: View {
     var body: some View {
-        HStack(spacing: 16) {
-            note(paper: Theme.stickyPaper(at: 2), tilt: -2.2, widths: [0.78, 0.86, 0.45])
-            note(paper: Theme.stickyPaper(at: 3), tilt: 1.6, widths: [0.86, 0.62])
+        GeometryReader { geometry in
+            // 壁の2列組みと同じ幅にして、1枚ぶんの場所に束が置いてあるように見せる。
+            let side = (geometry.size.width - 16) / 2
+            ZStack(alignment: .topLeading) {
+                // ずらし幅はぼかしの半径より大きくとる。小さいと滲みに紛れて、
+                // 重なった紙ではなく色の滲みに見える。
+                paper(at: 4, tilt: 4.2, bars: [])
+                    .frame(width: side, height: 150)
+                    .offset(x: 30, y: -16)
+                paper(at: 3, tilt: -3.6, bars: [])
+                    .frame(width: side, height: 150)
+                    .offset(x: 15, y: -8)
+                paper(at: 2, tilt: -1.2, bars: [0.78, 0.86, 0.45])
+                    .frame(width: side, height: 150)
+            }
+            .blur(radius: 6)
         }
-        .blur(radius: 7)
-        // ぼかすと縁が滲んで見えるので、少しだけ内側に置いて紙の形を保つ。
-        .padding(.vertical, 4)
+        // ぼかすと縁が滲むので、束のぶんだけ余白を足して紙の形を保つ。
+        .frame(height: 172)
+        .padding(.top, 10)
         .accessibilityElement()
         .accessibilityLabel("相手のことづて。まだ読めない")
     }
 
-    private func note(paper: Theme.StickyPaper, tilt: Double, widths: [Double]) -> some View {
+    private func paper(at index: Int, tilt: Double, bars: [Double]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            ForEach(Array(widths.enumerated()), id: \.offset) { _, width in
+            ForEach(Array(bars.enumerated()), id: \.offset) { _, width in
                 GeometryReader { geometry in
                     Capsule()
                         .fill(Theme.ink.opacity(0.55))
@@ -139,7 +155,7 @@ struct BlurredNotes: View {
         .padding(.horizontal, 16)
         .padding(.top, 26)
         .padding(.bottom, 14)
-        .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
-        .stickyPaper(paper, tilt: tilt)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .stickyPaper(Theme.stickyPaper(at: index), tilt: tilt)
     }
 }
