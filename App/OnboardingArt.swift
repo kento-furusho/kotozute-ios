@@ -101,3 +101,45 @@ extension View {
         modifier(AppearsInOrder(index: index))
     }
 }
+
+/// 気配の表示に使う、ぼかした付箋。
+///
+/// **中身は持たない。** サーバーはロック中に相手の本文を返さないし、枚数も返さない。
+/// だから本文らしきものを描かず、線の帯だけを置いてぼかす。
+/// 偽の文章を敷いてぼかすと、解像度を上げれば読めてしまう見た目になり、
+/// 「本当は持っているのに隠している」という誤解を招く。
+///
+/// 枚数は**常に2枚**で、相手が何枚書いたかとは関係がない。
+/// 枚数を映すと「存在のみ伝える」という決めごとが崩れる。
+struct BlurredNotes: View {
+    var body: some View {
+        HStack(spacing: 16) {
+            note(paper: Theme.stickyPaper(at: 2), tilt: -2.2, widths: [0.78, 0.86, 0.45])
+            note(paper: Theme.stickyPaper(at: 3), tilt: 1.6, widths: [0.86, 0.62])
+        }
+        .blur(radius: 7)
+        // ぼかすと縁が滲んで見えるので、少しだけ内側に置いて紙の形を保つ。
+        .padding(.vertical, 4)
+        .accessibilityElement()
+        .accessibilityLabel("相手のことづて。まだ読めない")
+    }
+
+    private func note(paper: Theme.StickyPaper, tilt: Double, widths: [Double]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            ForEach(Array(widths.enumerated()), id: \.offset) { _, width in
+                GeometryReader { geometry in
+                    Capsule()
+                        .fill(Theme.ink.opacity(0.55))
+                        .frame(width: geometry.size.width * width, height: 9)
+                }
+                .frame(height: 9)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 26)
+        .padding(.bottom, 14)
+        .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
+        .stickyPaper(paper, tilt: tilt)
+    }
+}

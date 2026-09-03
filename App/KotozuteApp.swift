@@ -19,7 +19,7 @@ struct KotozuteApp: App {
     /// 引数なしの通常起動でも `if let` が成立して真っ白な画面になる。
     /// AnyView で受けて、返さないときは明示的に nil を返す。
     ///
-    ///   xcrun simctl launch <udid> dev.kotozute.app --screen welcome|concept|auth|signin|reveal|detail|invite|invite-landing
+    ///   xcrun simctl launch <udid> dev.kotozute.app --screen welcome|concept|auth|signin|viewing|reveal|detail|invite|invite-landing
     private static var previewScreen: AnyView? {
         #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
@@ -56,6 +56,15 @@ struct KotozuteApp: App {
                     )
                 )
             )
+        // 「見る」画面。4分岐あるうえ、実データでは相手に書いてもらわないと出せない。
+        // --demo-state waiting|locked|visible と併せて使う。
+        case "viewing":
+            guard let auth = try? AuthStore() else { return nil }
+            // ストアはデモ（client: nil）で、起動引数から状態を組む。
+            // 壁のほうは実クライアントを渡すが、週の履歴は読めないので空のまま。
+            // index は 0 で「いちばん新しい週」になるので、確認したい分岐はそこに出る。
+            let client = KotozuteClient(baseURL: Config.apiBaseURL, tokenProvider: auth.authenticator)
+            return AnyView(ViewingView(store: KotozuteStore(client: nil), wall: WallStore(client: client)))
         // 招待画面は「登録済み・ペア未成立」でないと出ないので確認しづらい。
         // --demo-state waiting と併せて使うと1枚目が入った状態で見られる。
         case "invite":

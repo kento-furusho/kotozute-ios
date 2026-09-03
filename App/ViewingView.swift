@@ -266,10 +266,14 @@ struct ViewingView: View {
     @ViewBuilder
     private var partnerPresence: some View {
         if state.showsPartnerPresence {
-            Text("\(store.partnerName)も、今週なにか書いている。")
-                .font(Theme.font(15, weight: .medium))
-                .foregroundStyle(Theme.ink)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 16) {
+                Text("\(store.partnerName)も、今週なにか書いている。")
+                    .font(Theme.font(15, weight: .medium))
+                    .foregroundStyle(Theme.ink)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                BlurredNotes()
+            }
         }
     }
 
