@@ -272,7 +272,7 @@ struct ViewingView: View {
                     .foregroundStyle(Theme.ink)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                BlurredNotes()
+                BlurredNotes(count: state.partnerWrittenCount)
             }
         }
     }

@@ -102,43 +102,56 @@ extension View {
     }
 }
 
-/// 気配の表示に使う、ぼかした付箋の束。
+/// 気配の表示に使う、ぼかした付箋。相手が書いた枚数ぶん並べる。
 ///
-/// **中身は持たない。** サーバーはロック中に相手の本文を返さないし、枚数も返さない。
+/// **中身は持たない。** サーバーはロック中に相手の本文を返さない。
 /// だから本文らしきものを描かず、線の帯だけを置いてぼかす。
 /// 偽の文章を敷いてぼかすと、解像度を上げれば読めてしまう見た目になり、
 /// 「本当は持っているのに隠している」という誤解を招く。
 ///
-/// **重ねるのは、数を数えさせないため。** 並べて置くと枚数を読み取ろうとするし、
-/// 実際の枚数と食い違えば嘘になる。重ねれば後ろは縁しか見えず、
-/// 「何かある」だけが伝わる。枚数は点数表になるので出さない
-/// （プライバシーポリシーにも「書いた枚数など、本文以外の情報も
-/// 相手には表示されません」と書いてある）。
+/// 枚数は本物を使う。絵を出すと決めた以上、数が事実と食い違うほうが悪い
+/// （固定枚数にしていたときは、相手が5枚でも2枚に見えていた）。
+/// プライバシーポリシーにも「件数だけは相手に伝わる」と書いてある。
 struct BlurredNotes: View {
+    let count: Int
+
+    /// 並べる上限。多い週に画面が埋まると、気配ではなく本題になってしまう。
+    /// 溢れた分は最後の1枚の右下に「+n」で示す……のではなく、単に打ち切る。
+    /// 正確な数より「たくさんある」が伝わればよい場所なので。
+    private static let maxShown = 6
+
+    private var shown: Int { min(max(count, 1), Self.maxShown) }
+
     var body: some View {
-        GeometryReader { geometry in
-            // 壁の2列組みと同じ幅にして、1枚ぶんの場所に束が置いてあるように見せる。
-            let side = (geometry.size.width - 16) / 2
-            ZStack(alignment: .topLeading) {
-                // ずらし幅はぼかしの半径より大きくとる。小さいと滲みに紛れて、
-                // 重なった紙ではなく色の滲みに見える。
-                paper(at: 4, tilt: 4.2, bars: [])
-                    .frame(width: side, height: 150)
-                    .offset(x: 30, y: -16)
-                paper(at: 3, tilt: -3.6, bars: [])
-                    .frame(width: side, height: 150)
-                    .offset(x: 15, y: -8)
-                paper(at: 2, tilt: -1.2, bars: [0.78, 0.86, 0.45])
-                    .frame(width: side, height: 150)
+        LazyVGrid(
+            columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)],
+            spacing: 24
+        ) {
+            ForEach(0..<shown, id: \.self) { index in
+                paper(
+                    at: index + 2,
+                    tilt: Self.tilts[index % Self.tilts.count],
+                    bars: Self.bars[index % Self.bars.count]
+                )
             }
-            .blur(radius: 6)
         }
-        // ぼかすと縁が滲むので、束のぶんだけ余白を足して紙の形を保つ。
-        .frame(height: 172)
-        .padding(.top, 10)
+        .blur(radius: 6)
+        // ぼかすと縁が滲むので、少しだけ内側に置いて紙の形を保つ。
+        .padding(.vertical, 4)
         .accessibilityElement()
-        .accessibilityLabel("相手のことづて。まだ読めない")
+        .accessibilityLabel("相手のことづてが\(count)件。まだ読めない")
     }
+
+    /// 傾きと帯の並びは位置から決める。再描画でぶれないように。
+    private static let tilts: [Double] = [-2.2, 1.6, -1.1, 2.1, -1.7, 1.2]
+    private static let bars: [[Double]] = [
+        [0.78, 0.86, 0.45],
+        [0.86, 0.62],
+        [0.7, 0.9, 0.55],
+        [0.9, 0.48],
+        [0.66, 0.84, 0.4],
+        [0.82, 0.7],
+    ]
 
     private func paper(at index: Int, tilt: Double, bars: [Double]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -155,7 +168,7 @@ struct BlurredNotes: View {
         .padding(.horizontal, 16)
         .padding(.top, 26)
         .padding(.bottom, 14)
-        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
         .stickyPaper(Theme.stickyPaper(at: index), tilt: tilt)
     }
 }

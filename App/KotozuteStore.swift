@@ -312,6 +312,7 @@ final class KotozuteStore {
             canSeePartner: canSeePartner,
             lastCycle: LastCycle(mine: [], partner: canSeePartner ? demoPartner : []),
             partnerHasWritten: !demoPartner.isEmpty,
+            partnerWrittenCount: demoPartner.count,
             nextOpenAt: WallClock("2026-08-21T20:00")
         ))
     }
