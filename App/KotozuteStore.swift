@@ -265,6 +265,16 @@ final class KotozuteStore {
 
     private func seedFromLaunchArguments() {
         partnerName = "あい"
+        // 区切りの履歴も入れる。ふだんは GET /pair が返すもので、
+        // 空のままだと壁が週を1つも組めず、画面から日付の行が消える。
+        // 実物と違うものを見て確認したことにならないよう、ここで埋めておく。
+        // 3つ入れると、いちばん新しい週の手前にもう1週ぶんできる（送りの確認用）。
+        let lastOpen = Date().addingTimeInterval(-86_400 * 4)
+        cycleStarts = [
+            lastOpen.addingTimeInterval(-86_400 * 14),
+            lastOpen.addingTimeInterval(-86_400 * 7),
+            lastOpen,
+        ]
         let arguments = ProcessInfo.processInfo.arguments
         if let index = arguments.firstIndex(of: "--demo-state"), index + 1 < arguments.count {
             switch arguments[index + 1] {
