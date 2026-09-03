@@ -269,14 +269,10 @@ struct ViewingView: View {
             // 見出しは解禁後と同じ「◯◯のことづて」。同じものが、読めるか読めないか
             // だけ違う、という見え方にする。「なにか書いている」と言い換えていたが、
             // 付箋の絵が出るようになって、絵が言っていることを文が繰り返すだけになった。
+            // 添え書きは置かない。ぼかしが「まだ読めない」を言っているので、
+            // 文で言い直すと説明が重なる。
             section("\(store.partnerName)のことづて") {
-                VStack(alignment: .leading, spacing: 12) {
-                    BlurredNotes(count: state.partnerWrittenCount)
-                    // 読めるとは言わない。自分が書かなければオープンしても読めない。
-                    Text("オープンの日を待っている。")
-                        .font(Theme.font(13))
-                        .foregroundStyle(Theme.inkSoft)
-                }
+                BlurredNotes(count: state.partnerWrittenCount)
             }
         }
     }
