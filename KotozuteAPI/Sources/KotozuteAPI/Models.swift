@@ -280,12 +280,15 @@ public struct ThisWeekResponse: Decodable, Sendable {
     public let openStatus: OpenStatus
     public let canSeePartner: Bool
     public let lastCycle: LastCycle
-    /// 相手がいま書いているサイクルに書いたか。0枚か1枚以上かのみで、枚数は返らない。
+    /// 相手がいま書いているサイクルに書いたか。
     public let partnerHasWritten: Bool
+    /// その枚数。本文は含まない（本文を出してよいかは canSeePartner が決める）。
+    public let partnerWrittenCount: Int
     public let nextOpenAt: WallClock?
 
     private enum CodingKeys: String, CodingKey {
-        case myKotozute, openStatus, canSeePartner, lastCycle, partnerHasWritten, nextOpenAt
+        case myKotozute, openStatus, canSeePartner, lastCycle
+        case partnerHasWritten, partnerWrittenCount, nextOpenAt
     }
 
     /// プレビューやモックから組み立てるための初期化。
@@ -295,6 +298,7 @@ public struct ThisWeekResponse: Decodable, Sendable {
         canSeePartner: Bool,
         lastCycle: LastCycle,
         partnerHasWritten: Bool,
+        partnerWrittenCount: Int = 0,
         nextOpenAt: WallClock?
     ) {
         self.myKotozute = myKotozute
@@ -302,6 +306,7 @@ public struct ThisWeekResponse: Decodable, Sendable {
         self.canSeePartner = canSeePartner
         self.lastCycle = lastCycle
         self.partnerHasWritten = partnerHasWritten
+        self.partnerWrittenCount = partnerWrittenCount
         self.nextOpenAt = nextOpenAt
     }
 
@@ -313,6 +318,10 @@ public struct ThisWeekResponse: Decodable, Sendable {
         lastCycle = try c.decodeIfPresent(LastCycle.self, forKey: .lastCycle)
             ?? LastCycle(mine: [], partner: [])
         partnerHasWritten = try c.decode(Bool.self, forKey: .partnerHasWritten)
+        // 古いサーバーは返さない。無ければ「1枚以上いる」ことだけ分かっているので
+        // 最小の1にする。0 にすると気配が出ているのに絵が消える。
+        partnerWrittenCount = try c.decodeIfPresent(Int.self, forKey: .partnerWrittenCount)
+            ?? (partnerHasWritten ? 1 : 0)
         nextOpenAt = try WallClock.decodeOptional(from: c, forKey: .nextOpenAt)
     }
 }
@@ -325,6 +334,7 @@ extension ThisWeekResponse {
         canSeePartner: false,
         lastCycle: LastCycle(mine: [], partner: []),
         partnerHasWritten: false,
+        partnerWrittenCount: 0,
         nextOpenAt: nil
     )
 }

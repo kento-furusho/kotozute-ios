@@ -19,7 +19,7 @@ struct KotozuteApp: App {
     /// 引数なしの通常起動でも `if let` が成立して真っ白な画面になる。
     /// AnyView で受けて、返さないときは明示的に nil を返す。
     ///
-    ///   xcrun simctl launch <udid> dev.kotozute.app --screen welcome|concept|auth|signin|reveal|detail|invite|invite-landing
+    ///   xcrun simctl launch <udid> dev.kotozute.app --screen welcome|concept|auth|signin|viewing|reveal|detail|invite|invite-landing
     private static var previewScreen: AnyView? {
         #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
@@ -55,6 +55,21 @@ struct KotozuteApp: App {
                         isEditable: true
                     )
                 )
+            )
+        // 「見る」画面。4分岐あるうえ、実データでは相手に書いてもらわないと出せない。
+        // --demo-state waiting|locked|visible と併せて使う。
+        case "viewing":
+            guard let auth = try? AuthStore() else { return nil }
+            // タブごと包む。ViewingView だけを置くとフッターが出ず、
+            // 実物より薄い画面を見て確認したことにしてしまう。
+            //
+            // ストアはデモ（client: nil）で、起動引数から状態を組む。
+            // 壁には実クライアントを渡すが、週はデモの cycleStarts から組むので
+            // 通信はしない。index 0 が「いちばん新しい週」で、見たい分岐はそこに出る。
+            let client = KotozuteClient(baseURL: Config.apiBaseURL, tokenProvider: auth.authenticator)
+            let store = KotozuteStore(client: nil)
+            return AnyView(
+                MainTabView(store: store, auth: auth, wall: WallStore(client: client))
             )
         // 招待画面は「登録済み・ペア未成立」でないと出ないので確認しづらい。
         // --demo-state waiting と併せて使うと1枚目が入った状態で見られる。

@@ -101,3 +101,74 @@ extension View {
         modifier(AppearsInOrder(index: index))
     }
 }
+
+/// 気配の表示に使う、ぼかした付箋。相手が書いた枚数ぶん並べる。
+///
+/// **中身は持たない。** サーバーはロック中に相手の本文を返さない。
+/// だから本文らしきものを描かず、線の帯だけを置いてぼかす。
+/// 偽の文章を敷いてぼかすと、解像度を上げれば読めてしまう見た目になり、
+/// 「本当は持っているのに隠している」という誤解を招く。
+///
+/// 枚数は本物を使う。絵を出すと決めた以上、数が事実と食い違うほうが悪い
+/// （固定枚数にしていたときは、相手が5枚でも2枚に見えていた）。
+/// プライバシーポリシーにも「件数だけは相手に伝わる」と書いてある。
+struct BlurredNotes: View {
+    let count: Int
+
+    /// 並べる上限。多い週に画面が埋まると、気配ではなく本題になってしまう。
+    /// 溢れた分は最後の1枚の右下に「+n」で示す……のではなく、単に打ち切る。
+    /// 正確な数より「たくさんある」が伝わればよい場所なので。
+    private static let maxShown = 6
+
+    private var shown: Int { min(max(count, 1), Self.maxShown) }
+
+    var body: some View {
+        LazyVGrid(
+            columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)],
+            spacing: 24
+        ) {
+            ForEach(0..<shown, id: \.self) { index in
+                paper(
+                    at: index + 2,
+                    tilt: Self.tilts[index % Self.tilts.count],
+                    bars: Self.bars[index % Self.bars.count]
+                )
+            }
+        }
+        .blur(radius: 6)
+        // ぼかすと縁が滲むので、少しだけ内側に置いて紙の形を保つ。
+        .padding(.vertical, 4)
+        .accessibilityElement()
+        .accessibilityLabel("相手のことづてが\(count)件。まだ読めない")
+    }
+
+    /// 傾きと帯の並びは位置から決める。再描画でぶれないように。
+    private static let tilts: [Double] = [-2.2, 1.6, -1.1, 2.1, -1.7, 1.2]
+    private static let bars: [[Double]] = [
+        [0.78, 0.86, 0.45],
+        [0.86, 0.62],
+        [0.7, 0.9, 0.55],
+        [0.9, 0.48],
+        [0.66, 0.84, 0.4],
+        [0.82, 0.7],
+    ]
+
+    private func paper(at index: Int, tilt: Double, bars: [Double]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            ForEach(Array(bars.enumerated()), id: \.offset) { _, width in
+                GeometryReader { geometry in
+                    Capsule()
+                        .fill(Theme.ink.opacity(0.55))
+                        .frame(width: geometry.size.width * width, height: 9)
+                }
+                .frame(height: 9)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 26)
+        .padding(.bottom, 14)
+        .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
+        .stickyPaper(Theme.stickyPaper(at: index), tilt: tilt)
+    }
+}

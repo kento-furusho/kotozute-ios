@@ -19,8 +19,11 @@ public struct HomeState: Sendable, Equatable {
     public let screen: Screen
 
     /// 相手の「気配」を出してよいか。相手が0枚の週は一切出さない、という仕様の担保。
-    /// 枚数は持たない（サーバーも返さない）。
     public let showsPartnerPresence: Bool
+
+    /// 相手がいま書いているサイクルに書いた枚数。気配の付箋をこの数だけ並べる。
+    /// 本文は入らない。
+    public let partnerWrittenCount: Int
 
     /// 直前のサイクルに自分が書いた分。次のオープンまで手元で読める。
     /// 自分のものなので、ロック中でも見せてよい。
@@ -47,6 +50,7 @@ public struct HomeState: Sendable, Equatable {
 
         lastCycleMine = response.lastCycle.mine
         showsPartnerPresence = response.partnerHasWritten
+        partnerWrittenCount = response.partnerWrittenCount
         nextOpenAt = response.nextOpenAt
     }
 }

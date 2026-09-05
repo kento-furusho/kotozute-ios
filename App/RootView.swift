@@ -151,11 +151,6 @@ struct ProfileSetupView: View {
             Text("名前")
                 .font(Theme.font(26, weight: .bold))
                 .foregroundStyle(Theme.ink)
-            Text("相手の画面に出る名前。")
-                .font(Theme.font(14))
-                .foregroundStyle(Theme.inkSoft)
-                .padding(.top, 8)
-
             TextField("けんと", text: $displayName)
                 .font(Theme.font(16))
                 .padding(14)

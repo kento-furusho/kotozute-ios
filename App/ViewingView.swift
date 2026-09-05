@@ -266,10 +266,14 @@ struct ViewingView: View {
     @ViewBuilder
     private var partnerPresence: some View {
         if state.showsPartnerPresence {
-            Text("\(store.partnerName)も、今週なにか書いている。")
-                .font(Theme.font(15, weight: .medium))
-                .foregroundStyle(Theme.ink)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            // 見出しは解禁後と同じ「◯◯のことづて」。同じものが、読めるか読めないか
+            // だけ違う、という見え方にする。「なにか書いている」と言い換えていたが、
+            // 付箋の絵が出るようになって、絵が言っていることを文が繰り返すだけになった。
+            // 添え書きは置かない。ぼかしが「まだ読めない」を言っているので、
+            // 文で言い直すと説明が重なる。
+            section("\(store.partnerName)のことづて") {
+                BlurredNotes(count: state.partnerWrittenCount)
+            }
         }
     }
 
