@@ -60,11 +60,17 @@ struct KotozuteApp: App {
         // --demo-state waiting|locked|visible と併せて使う。
         case "viewing":
             guard let auth = try? AuthStore() else { return nil }
+            // タブごと包む。ViewingView だけを置くとフッターが出ず、
+            // 実物より薄い画面を見て確認したことにしてしまう。
+            //
             // ストアはデモ（client: nil）で、起動引数から状態を組む。
-            // 壁のほうは実クライアントを渡すが、週の履歴は読めないので空のまま。
-            // index は 0 で「いちばん新しい週」になるので、確認したい分岐はそこに出る。
+            // 壁には実クライアントを渡すが、週はデモの cycleStarts から組むので
+            // 通信はしない。index 0 が「いちばん新しい週」で、見たい分岐はそこに出る。
             let client = KotozuteClient(baseURL: Config.apiBaseURL, tokenProvider: auth.authenticator)
-            return AnyView(ViewingView(store: KotozuteStore(client: nil), wall: WallStore(client: client)))
+            let store = KotozuteStore(client: nil)
+            return AnyView(
+                MainTabView(store: store, auth: auth, wall: WallStore(client: client))
+            )
         // 招待画面は「登録済み・ペア未成立」でないと出ないので確認しづらい。
         // --demo-state waiting と併せて使うと1枚目が入った状態で見られる。
         case "invite":
