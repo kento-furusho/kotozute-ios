@@ -348,9 +348,13 @@ struct SettingsView: View {
     ) -> some View {
         Button(action: action) {
             HStack {
-                Text(value)
-                    .font(Theme.font(17))
-                    .foregroundStyle(Theme.ink)
+                // 開いているあいだは値を出さない。下の入力欄やピッカーが
+                // 同じものを持っているので、並ぶと二重に見える。
+                if !isOpen {
+                    Text(value)
+                        .font(Theme.font(17))
+                        .foregroundStyle(Theme.ink)
+                }
                 Spacer()
                 Text(isOpen ? "とじる" : "変える")
                     .font(Theme.font(15, weight: .medium))
