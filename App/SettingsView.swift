@@ -40,15 +40,12 @@ struct SettingsView: View {
                     .foregroundStyle(Theme.inkSoft)
                     .padding(.top, 6)
 
-                settingRow(
-                    value: store.myName.isEmpty ? "—" : store.myName,
-                    isOpen: isEditingName
-                ) {
-                    withAnimation(.easeInOut(duration: 0.18)) { isEditingName.toggle() }
-                }
-
                 if isEditingName {
                     displayName
+                } else {
+                    settingRow(value: store.myName.isEmpty ? "—" : store.myName) {
+                        withAnimation(.easeInOut(duration: 0.18)) { isEditingName = true }
+                    }
                 }
 
                 Divider().padding(.vertical, 28)
@@ -62,11 +59,10 @@ struct SettingsView: View {
                     .foregroundStyle(Theme.inkSoft)
                     .padding(.top, 6)
 
-                settingRow(
-                    value: "\(Self.weekdays[store.openDayOfWeek])曜 \(store.openTime)",
-                    isOpen: isEditingSchedule
-                ) {
-                    withAnimation(.easeInOut(duration: 0.18)) { isEditingSchedule.toggle() }
+                if !isEditingSchedule {
+                    settingRow(value: "\(Self.weekdays[store.openDayOfWeek])曜 \(store.openTime)") {
+                        withAnimation(.easeInOut(duration: 0.18)) { isEditingSchedule = true }
+                    }
                 }
 
                 if isEditingSchedule {
@@ -134,6 +130,8 @@ struct SettingsView: View {
                     }
                     .disabled(!hasChanges || isSaving)
                     .padding(.top, 16)
+
+                        closeButton { isEditingSchedule = false }
                     }
                 }
 
@@ -333,8 +331,22 @@ struct SettingsView: View {
                     .clipShape(Capsule())
             }
             .disabled(!canSaveName || isSavingName)
+
+            closeButton { isEditingName = false }
         }
         .padding(.top, 16)
+    }
+
+    /// 編集をやめる。開いている枠の中に置く。
+    /// 行の側に残すと、値の無い箱に「とじる」だけが浮いて壊れて見えた。
+    private func closeButton(_ action: @escaping () -> Void) -> some View {
+        Button("とじる") {
+            withAnimation(.easeInOut(duration: 0.18)) { action() }
+        }
+        .font(Theme.font(14))
+        .foregroundStyle(Theme.inkSoft)
+        .frame(maxWidth: .infinity)
+        .padding(.top, 4)
     }
 
     /// 設定の1行。ふだんは値だけ見せて、押すと編集が開く。
@@ -343,20 +355,15 @@ struct SettingsView: View {
     /// いまどうなっているかが読み取りにくい。値を先に見せる。
     private func settingRow(
         value: String,
-        isOpen: Bool,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
             HStack {
-                // 開いているあいだは値を出さない。下の入力欄やピッカーが
-                // 同じものを持っているので、並ぶと二重に見える。
-                if !isOpen {
-                    Text(value)
-                        .font(Theme.font(17))
-                        .foregroundStyle(Theme.ink)
-                }
+                Text(value)
+                    .font(Theme.font(17))
+                    .foregroundStyle(Theme.ink)
                 Spacer()
-                Text(isOpen ? "とじる" : "変える")
+                Text("変える")
                     .font(Theme.font(15, weight: .medium))
                     .foregroundStyle(Theme.accent)
             }
