@@ -41,24 +41,42 @@ final class WallStore {
 
     /// 区切りの履歴から週を組み立てる。
     ///
-    /// cycleStarts は古い順。末尾は「いま書いているサイクル」の開始なので、
-    /// 壁に出す週は「末尾より前」＝すでにオープンされたものだけ。
-    func setCycles(_ starts: [Date]) {
+    /// cycleStarts は古い順。隣り合う2つで、すでに閉じた1週間になる。
+    /// そこへ**いま書いているサイクル**（末尾の区切りから次のオープンまで）を
+    /// 先頭に足す。これが index 0。まだ何も無い週でも枠は出す。
+    /// 「今週まだ0枚」と分かることに意味があるので、送れないほうが不便だった。
+    ///
+    /// - Parameter nextOpen: 次のオープン時刻。分からなければ枠を作らない。
+    func setCycles(_ starts: [Date], nextOpen: Date?) {
         let sorted = starts.sorted()
-        guard sorted.count >= 2 else {
+        guard let latest = sorted.last else {
             weeks = []
             return
         }
         var built: [Week] = []
         // 隣り合う2つで1週間。新しい順に並べたいので、あとで反転する。
-        for i in 0..<(sorted.count - 1) {
+        for i in 0..<max(sorted.count - 1, 0) {
             built.append(Week(start: sorted[i], end: sorted[i + 1], index: 0))
         }
-        weeks = built.reversed().enumerated().map {
+        var newestFirst = Array(built.reversed())
+        hasCurrentCycle = false
+        if let nextOpen, nextOpen > latest {
+            newestFirst.insert(Week(start: latest, end: nextOpen, index: 0), at: 0)
+            hasCurrentCycle = true
+        }
+        weeks = newestFirst.enumerated().map {
             Week(start: $1.start, end: $1.end, index: $0)
         }
         index = 0
     }
+
+    /// index 0 は書いているサイクル、1 は読むサイクル。どちらも this-week の
+    /// 結果を使うので、アーカイブは引かない。
+    var isCurrentCycle: Bool { index == 0 && hasCurrentCycle }
+    var isReadingCycle: Bool { index == (hasCurrentCycle ? 1 : 0) }
+
+    /// 書いているサイクルの枠を持っているか。nextOpenAt が無いと作れない。
+    private(set) var hasCurrentCycle = false
 
     func showNewer() async {
         guard hasNewer else { return }
@@ -74,10 +92,10 @@ final class WallStore {
 
     /// いま選んでいる週を読む。
     ///
-    /// 最新の週（index 0）は相互ロックの対象なので、ここでは読まない。
-    /// 画面が this-week の結果をそのまま使う。
+    /// 書いているサイクルと読むサイクルは this-week の結果をそのまま使うので、
+    /// ここでは読まない。読むサイクルは相互ロックの対象でもある。
     func load() async {
-        guard let week = current, week.index > 0 else {
+        guard let week = current, !isCurrentCycle, !isReadingCycle else {
             mine = []
             partner = []
             return

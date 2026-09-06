@@ -261,6 +261,13 @@ final class KotozuteStore {
     // MARK: - 通信しないモード
 
     private var demoPartner: [Kotozute] = []
+    /// デモの次のオープン。壁の先頭の枠を作るのに要る。
+    private static let demoNextOpen: String = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm"
+        return formatter.string(from: Date().addingTimeInterval(86_400 * 3))
+    }()
     private var demoPartnerOpened = false
 
     private func seedFromLaunchArguments() {
@@ -323,7 +330,9 @@ final class KotozuteStore {
             lastCycle: LastCycle(mine: [], partner: canSeePartner ? demoPartner : []),
             partnerHasWritten: !demoPartner.isEmpty,
             partnerWrittenCount: demoPartner.count,
-            nextOpenAt: WallClock("2026-08-21T20:00")
+            // 先の日付にする。過去だと「いま書いている期間」の枠が作れず、
+            // 壁の先頭（index 0）が実物と変わってしまう。
+            nextOpenAt: WallClock(Self.demoNextOpen)
         ))
     }
 }

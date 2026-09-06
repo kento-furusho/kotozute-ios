@@ -62,8 +62,9 @@ struct ViewingView: View {
                 await store.load()
                 await wall.load()
             }
-            .onChange(of: store.cycleStarts) { _, starts in wall.setCycles(starts) }
-            .onAppear { wall.setCycles(store.cycleStarts) }
+            .onChange(of: store.cycleStarts) { _, _ in syncWeeks() }
+            .onChange(of: state.nextOpenAt) { _, _ in syncWeeks() }
+            .onAppear { syncWeeks() }
             .onChange(of: revealKey) { _, key in showRevealIfNeeded(key) }
             .onAppear { showRevealIfNeeded(revealKey) }
             .fullScreenCover(item: $fullScreen) { screen in
@@ -85,7 +86,10 @@ struct ViewingView: View {
 
     private var state: HomeState { store.homeState ?? HomeState(from: .empty) }
     /// いちばん新しい週を見ているか。ここだけ相互ロックがかかる。
-    private var isLatestWeek: Bool { wall.index == 0 }
+    /// 書いているサイクルの終わり＝次のオープン。壁の枠を作るのに要る。
+    private func syncWeeks() {
+        wall.setCycles(store.cycleStarts, nextOpen: state.nextOpenAt?.date(in: store.timezone))
+    }
 
     // MARK: - 週の行き来
 
@@ -124,10 +128,31 @@ struct ViewingView: View {
 
     @ViewBuilder
     private var weekContent: some View {
-        if isLatestWeek {
+        if wall.isCurrentCycle {
+            currentCycle
+        } else if wall.isReadingCycle {
             latestWeek
         } else {
             pastWeek
+        }
+    }
+
+    /// いま書いているサイクル。まだオープン前なので、相手の本文は出せない。
+    /// 自分の分と、相手の気配だけ。0枚なら無いと言う。
+    @ViewBuilder
+    private var currentCycle: some View {
+        if state.showsPartnerPresence {
+            section("\(store.partnerName)のことづて") {
+                BlurredNotes(count: state.partnerWrittenCount)
+            }
+        }
+        if store.myKotozute.isEmpty {
+            Text("この期間のことづては、まだ無い。")
+                .font(Theme.font(15))
+                .foregroundStyle(Theme.inkSoft)
+                .padding(.top, 8)
+        } else {
+            mineSection(store.myKotozute)
         }
     }
 
@@ -163,7 +188,7 @@ struct ViewingView: View {
                 .font(Theme.font(15))
                 .foregroundStyle(Theme.inkSoft)
         } else if wall.mine.isEmpty, wall.partner.isEmpty {
-            Text("この週のことづては無い。")
+            Text("この期間のことづては無い。")
                 .font(Theme.font(15))
                 .foregroundStyle(Theme.inkSoft)
                 .padding(.top, 8)
