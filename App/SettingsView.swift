@@ -31,7 +31,7 @@ struct SettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                Text("なまえ")
+                Text("ニックネーム")
                     .font(Theme.font(18, weight: .bold))
                     .foregroundStyle(Theme.ink)
 
@@ -294,7 +294,7 @@ struct SettingsView: View {
     /// 表示名。空のまま保存はできない（サーバーも 400 で弾く）。
     private var displayName: some View {
         VStack(alignment: .leading, spacing: 10) {
-            TextField("なまえ", text: $name)
+            TextField("ニックネーム", text: $name)
                 .font(Theme.font(17))
                 .foregroundStyle(Theme.ink)
                 .textInputAutocapitalization(.never)
