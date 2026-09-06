@@ -62,8 +62,9 @@ struct ViewingView: View {
                 await store.load()
                 await wall.load()
             }
-            .onChange(of: store.cycleStarts) { _, starts in wall.setCycles(starts) }
-            .onAppear { wall.setCycles(store.cycleStarts) }
+            .onChange(of: store.cycleStarts) { _, _ in syncWeeks() }
+            .onChange(of: state.nextOpenAt) { _, _ in syncWeeks() }
+            .onAppear { syncWeeks() }
             .onChange(of: revealKey) { _, key in showRevealIfNeeded(key) }
             .onAppear { showRevealIfNeeded(revealKey) }
             .fullScreenCover(item: $fullScreen) { screen in
@@ -85,7 +86,10 @@ struct ViewingView: View {
 
     private var state: HomeState { store.homeState ?? HomeState(from: .empty) }
     /// いちばん新しい週を見ているか。ここだけ相互ロックがかかる。
-    private var isLatestWeek: Bool { wall.index == 0 }
+    /// 書いているサイクルの終わり＝次のオープン。壁の枠を作るのに要る。
+    private func syncWeeks() {
+        wall.setCycles(store.cycleStarts, nextOpen: state.nextOpenAt?.date(in: store.timezone))
+    }
 
     // MARK: - 週の行き来
 
@@ -124,11 +128,49 @@ struct ViewingView: View {
 
     @ViewBuilder
     private var weekContent: some View {
-        if isLatestWeek {
+        if wall.isCurrentCycle {
+            currentCycle
+        } else if wall.isReadingCycle {
             latestWeek
         } else {
             pastWeek
         }
+    }
+
+    /// いま書いているサイクル。まだオープン前なので、相手の本文は出せない。
+    /// 相手は気配（ぼかした付箋）だけ、自分は本文をそのまま。
+    ///
+    /// 空のときも見出しを出す。見出し無しで「まだ無い」とだけ置くと、
+    /// 上に並んだ相手のぼかし付箋と食い違って見える（無いと言っているのは
+    /// 自分の分だけなのに、この期間には何も無いと読める）。
+    @ViewBuilder
+    private var currentCycle: some View {
+        if state.showsPartnerPresence {
+            section("\(store.partnerName)のことづて") {
+                BlurredNotes(count: state.partnerWrittenCount)
+            }
+        }
+        section(myTitle) {
+            if store.myKotozute.isEmpty {
+                emptyNote
+            } else {
+                StickyNoteList(items: store.myKotozute, colorOffset: 4) { tapped in
+                    fullScreen = .detail(KotozuteDetail(
+                        items: store.myKotozute,
+                        startIndex: store.myKotozute.firstIndex(of: tapped) ?? 0,
+                        title: myTitle,
+                        colorOffset: 4,
+                        isEditable: true
+                    ))
+                }
+            }
+        }
+    }
+
+    private var emptyNote: some View {
+        Text("まだ何も書いていない。")
+            .font(Theme.font(15))
+            .foregroundStyle(Theme.inkSoft)
     }
 
     /// いちばん新しい週。相互ロックの対象なので this-week の結果を使う。
@@ -148,8 +190,18 @@ struct ViewingView: View {
             mineSection(state.lastCycleMine)
 
         case .waitingForOpen, .plainHome:
-            partnerPresence
-            mineSection(state.lastCycleMine)
+            // 気配はここには出さない。partnerWrittenCount が数えているのは
+            // 「いま書いているサイクル」で、この画面が映しているのは
+            // 読むサイクル。別の期間の話を混ぜることになる。
+            if state.lastCycleMine.isEmpty {
+                section(myTitle) {
+                    Text("この期間は書いていない。")
+                        .font(Theme.font(15))
+                        .foregroundStyle(Theme.inkSoft)
+                }
+            } else {
+                mineSection(state.lastCycleMine)
+            }
         }
     }
 
@@ -163,7 +215,7 @@ struct ViewingView: View {
                 .font(Theme.font(15))
                 .foregroundStyle(Theme.inkSoft)
         } else if wall.mine.isEmpty, wall.partner.isEmpty {
-            Text("この週のことづては無い。")
+            Text("この期間のことづては無い。")
                 .font(Theme.font(15))
                 .foregroundStyle(Theme.inkSoft)
                 .padding(.top, 8)
@@ -257,24 +309,6 @@ struct ViewingView: View {
         guard case let .partnerVisible(items) = state.screen else { return }
         // ここでは記録しない。実際にオープンを押したときに RevealView から記録する。
         fullScreen = .reveal(RevealItems(items: items))
-    }
-
-    /// 相手の気配。存在だけを伝える。枚数は出さない（サーバーも返さない）。
-    ///
-    /// もとはオープンまでの残り日数を出すカードの中にあった。カードごと消したが、
-    /// 気配は仕様上ここにしか出る場所が無いので、単独で残している。
-    @ViewBuilder
-    private var partnerPresence: some View {
-        if state.showsPartnerPresence {
-            // 見出しは解禁後と同じ「◯◯のことづて」。同じものが、読めるか読めないか
-            // だけ違う、という見え方にする。「なにか書いている」と言い換えていたが、
-            // 付箋の絵が出るようになって、絵が言っていることを文が繰り返すだけになった。
-            // 添え書きは置かない。ぼかしが「まだ読めない」を言っているので、
-            // 文で言い直すと説明が重なる。
-            section("\(store.partnerName)のことづて") {
-                BlurredNotes(count: state.partnerWrittenCount)
-            }
-        }
     }
 
     /// 罰ではなく交換なので、急かす言い方にしない。

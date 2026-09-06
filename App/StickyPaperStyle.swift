@@ -60,3 +60,22 @@ struct StickyPaperStyle: ViewModifier {
             .frame(width: 1)
     }
 }
+
+/// 枠だけのボタン。画面の下に並ぶ導線を、押せるものとして見せる。
+///
+/// 塗りつぶしは主役のボタン（「リンクを送る」など）に取ってあるので、
+/// ここは枠だけにして、主役と並んだときに序列が崩れないようにする。
+struct OutlineButtonStyle: ButtonStyle {
+    var tint: Color = Theme.inkSoft
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(Theme.font(15, weight: .medium))
+            .foregroundStyle(tint)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 13)
+            .background(.white.opacity(configuration.isPressed ? 0.4 : 0.7))
+            .clipShape(Capsule())
+            .overlay(Capsule().stroke(Theme.line, lineWidth: 1))
+    }
+}

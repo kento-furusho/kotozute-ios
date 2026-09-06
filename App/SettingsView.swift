@@ -5,6 +5,8 @@ import UIKit
 struct SettingsView: View {
     @Bindable var store: KotozuteStore
     @Bindable var auth: AuthStore
+    /// ペア未成立のとき、招待画面へ戻る。
+    var onInvite: () -> Void = {}
 
     @State private var dayOfWeek = 5
     @State private var hour = 20
@@ -19,6 +21,10 @@ struct SettingsView: View {
     @State private var name = ""
     @State private var isSavingName = false
     @State private var nameMessage: String?
+    /// 設定はふだん「いまの値」だけ見せて、変えるときに一段開く。
+    /// 入力欄をいきなり置くと、見に来ただけで触ってしまう。
+    @State private var isEditingName = false
+    @State private var isEditingSchedule = false
 
     private static let weekdays = ["日", "月", "火", "水", "木", "金", "土"]
 
@@ -29,12 +35,13 @@ struct SettingsView: View {
                     .font(Theme.font(18, weight: .bold))
                     .foregroundStyle(Theme.ink)
 
-                Text("あいての画面に、この名前で出る。")
-                    .font(Theme.font(14))
-                    .foregroundStyle(Theme.inkSoft)
-                    .padding(.top, 6)
-
-                displayName
+                if isEditingName {
+                    displayName
+                } else {
+                    settingRow(value: store.myName.isEmpty ? "—" : store.myName) {
+                        withAnimation(.easeInOut(duration: 0.18)) { isEditingName = true }
+                    }
+                }
 
                 Divider().padding(.vertical, 28)
 
@@ -47,69 +54,82 @@ struct SettingsView: View {
                     .foregroundStyle(Theme.inkSoft)
                     .padding(.top, 6)
 
-                Picker("曜日", selection: $dayOfWeek) {
-                    ForEach(0..<7, id: \.self) { index in
-                        Text(Self.weekdays[index]).tag(index)
+                if !isEditingSchedule {
+                    settingRow(value: "\(Self.weekdays[store.openDayOfWeek])曜 \(store.openTime)") {
+                        withAnimation(.easeInOut(duration: 0.18)) { isEditingSchedule = true }
                     }
                 }
-                .pickerStyle(.segmented)
-                .padding(.top, 18)
 
-                HStack(spacing: 0) {
-                    Picker("時", selection: $hour) {
-                        ForEach(0..<24, id: \.self) { Text(String(format: "%02d", $0)).tag($0) }
-                    }
-                    .pickerStyle(.wheel)
-                    .frame(maxWidth: .infinity)
-
-                    Text(":")
-                        .font(Theme.font(20, weight: .bold))
-                        .foregroundStyle(Theme.ink)
-
-                    Picker("分", selection: $minute) {
-                        // 5分刻み。細かく刻む必要のある設定ではない。
-                        ForEach(Array(stride(from: 0, to: 60, by: 5)), id: \.self) {
-                            Text(String(format: "%02d", $0)).tag($0)
+                if isEditingSchedule {
+                    VStack(alignment: .leading, spacing: 0) {
+                    Picker("曜日", selection: $dayOfWeek) {
+                        ForEach(0..<7, id: \.self) { index in
+                            Text(Self.weekdays[index]).tag(index)
                         }
                     }
-                    .pickerStyle(.wheel)
-                    .frame(maxWidth: .infinity)
-                }
-                .frame(height: 130)
+                    .pickerStyle(.segmented)
+                    .padding(.top, 18)
 
-                if let message {
-                    Text(message)
-                        .font(Theme.font(14))
-                        .foregroundStyle(Theme.accent)
-                        .padding(.top, 8)
-                }
-
-                Button {
-                    Task {
-                        isSaving = true
-                        message = await store.updateSchedule(
-                            openDayOfWeek: dayOfWeek,
-                            openTime: String(format: "%02d:%02d", hour, minute)
-                        )
-                        isSaving = false
-                        if message == nil { message = "変えた。" }
-                    }
-                } label: {
-                    Group {
-                        if isSaving {
-                            ProgressView().tint(.white)
-                        } else {
-                            Text("この日にする").font(Theme.font(17, weight: .bold))
+                    HStack(spacing: 0) {
+                        Picker("時", selection: $hour) {
+                            ForEach(0..<24, id: \.self) { Text(String(format: "%02d", $0)).tag($0) }
                         }
+                        .pickerStyle(.wheel)
+                        .frame(maxWidth: .infinity)
+
+                        Text(":")
+                            .font(Theme.font(20, weight: .bold))
+                            .foregroundStyle(Theme.ink)
+
+                        Picker("分", selection: $minute) {
+                            // 5分刻み。細かく刻む必要のある設定ではない。
+                            ForEach(Array(stride(from: 0, to: 60, by: 5)), id: \.self) {
+                                Text(String(format: "%02d", $0)).tag($0)
+                            }
+                        }
+                        .pickerStyle(.wheel)
+                        .frame(maxWidth: .infinity)
                     }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(hasChanges ? Theme.accent : Theme.inkSoft.opacity(0.4))
-                    .clipShape(Capsule())
+                    .frame(height: 130)
+
+                    if let message {
+                        Text(message)
+                            .font(Theme.font(14))
+                            .foregroundStyle(Theme.accent)
+                            .padding(.top, 8)
+                    }
+
+                    Button {
+                        Task {
+                            isSaving = true
+                            message = await store.updateSchedule(
+                                openDayOfWeek: dayOfWeek,
+                                openTime: String(format: "%02d:%02d", hour, minute)
+                            )
+                            isSaving = false
+                            if message == nil { message = "変更した。" }
+                        }
+                    } label: {
+                        Group {
+                            if isSaving {
+                                ProgressView().tint(.white)
+                            } else {
+                                Text("この日にする").font(Theme.font(17, weight: .bold))
+                            }
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(hasChanges ? Theme.accent : Theme.inkSoft.opacity(0.4))
+                        .clipShape(Capsule())
+                    }
+                    .disabled(!hasChanges || isSaving)
+                    .padding(.top, 16)
+
+                        // ピッカーの下は詰まって見えるので、名前側より広く取る。
+                        closeButton(topPadding: 16) { isEditingSchedule = false }
+                    }
                 }
-                .disabled(!hasChanges || isSaving)
-                .padding(.top, 16)
 
                 Divider().padding(.vertical, 28)
 
@@ -133,12 +153,20 @@ struct SettingsView: View {
                 }
                 .padding(.vertical, 12)
 
-                Button(isDissolving ? "解消中…" : "ペアを解消する") {
-                    showsDissolveConfirm = true
+                // ペア未成立でもホームに入れるようになったので、
+                // ここから招待画面へ戻れないと行き止まりになる。
+                if store.partnerName.isEmpty {
+                    Button("ペアを組む") { onInvite() }
+                        .font(Theme.font(15))
+                        .foregroundStyle(Theme.accent)
+                } else {
+                    Button(isDissolving ? "解消中…" : "ペアを解消する") {
+                        showsDissolveConfirm = true
+                    }
+                    .font(Theme.font(15))
+                    .foregroundStyle(Theme.inkSoft)
+                    .disabled(isDissolving)
                 }
-                .font(Theme.font(15))
-                .foregroundStyle(Theme.inkSoft)
-                .disabled(isDissolving)
 
                 Divider().padding(.vertical, 28)
 
@@ -286,7 +314,7 @@ struct SettingsView: View {
             Button {
                 Task {
                     isSavingName = true
-                    nameMessage = await store.updateDisplayName(name) ?? "変えた。"
+                    nameMessage = await store.updateDisplayName(name) ?? "変更した。"
                     isSavingName = false
                 }
             } label: {
@@ -299,7 +327,49 @@ struct SettingsView: View {
                     .clipShape(Capsule())
             }
             .disabled(!canSaveName || isSavingName)
+
+            closeButton { isEditingName = false }
         }
+        .padding(.top, 16)
+    }
+
+    /// 編集をやめる。開いている枠の中に置く。
+    /// 行の側に残すと、値の無い箱に「とじる」だけが浮いて壊れて見えた。
+    private func closeButton(topPadding: CGFloat = 4, _ action: @escaping () -> Void) -> some View {
+        Button("閉じる") {
+            withAnimation(.easeInOut(duration: 0.18)) { action() }
+        }
+        .font(Theme.font(14))
+        .foregroundStyle(Theme.inkSoft)
+        .frame(maxWidth: .infinity)
+        .padding(.top, topPadding)
+    }
+
+    /// 設定の1行。ふだんは値だけ見せて、押すと編集が開く。
+    ///
+    /// 入力欄やピッカーをいきなり並べると、見に来ただけの人が触ってしまうし、
+    /// いまどうなっているかが読み取りにくい。値を先に見せる。
+    private func settingRow(
+        value: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack {
+                Text(value)
+                    .font(Theme.font(17))
+                    .foregroundStyle(Theme.ink)
+                Spacer()
+                Text("変更する")
+                    .font(Theme.font(15, weight: .medium))
+                    .foregroundStyle(Theme.accent)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 14)
+            .background(.white.opacity(0.7))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.line, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
         .padding(.top, 16)
     }
 
