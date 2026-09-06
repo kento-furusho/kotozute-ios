@@ -35,11 +35,6 @@ struct SettingsView: View {
                     .font(Theme.font(18, weight: .bold))
                     .foregroundStyle(Theme.ink)
 
-                Text("あいての画面に、この名前で出る。")
-                    .font(Theme.font(14))
-                    .foregroundStyle(Theme.inkSoft)
-                    .padding(.top, 6)
-
                 if isEditingName {
                     displayName
                 } else {
@@ -112,7 +107,7 @@ struct SettingsView: View {
                                 openTime: String(format: "%02d:%02d", hour, minute)
                             )
                             isSaving = false
-                            if message == nil { message = "変えた。" }
+                            if message == nil { message = "変更した。" }
                         }
                     } label: {
                         Group {
@@ -319,7 +314,7 @@ struct SettingsView: View {
             Button {
                 Task {
                     isSavingName = true
-                    nameMessage = await store.updateDisplayName(name) ?? "変えた。"
+                    nameMessage = await store.updateDisplayName(name) ?? "変更した。"
                     isSavingName = false
                 }
             } label: {
