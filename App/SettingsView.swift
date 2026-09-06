@@ -363,7 +363,7 @@ struct SettingsView: View {
                     .font(Theme.font(17))
                     .foregroundStyle(Theme.ink)
                 Spacer()
-                Text("変える")
+                Text("変更する")
                     .font(Theme.font(15, weight: .medium))
                     .foregroundStyle(Theme.accent)
             }
