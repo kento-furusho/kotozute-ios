@@ -131,7 +131,8 @@ struct SettingsView: View {
                     .disabled(!hasChanges || isSaving)
                     .padding(.top, 16)
 
-                        closeButton { isEditingSchedule = false }
+                        // ピッカーの下は詰まって見えるので、名前側より広く取る。
+                        closeButton(topPadding: 16) { isEditingSchedule = false }
                     }
                 }
 
@@ -339,14 +340,14 @@ struct SettingsView: View {
 
     /// 編集をやめる。開いている枠の中に置く。
     /// 行の側に残すと、値の無い箱に「とじる」だけが浮いて壊れて見えた。
-    private func closeButton(_ action: @escaping () -> Void) -> some View {
-        Button("とじる") {
+    private func closeButton(topPadding: CGFloat = 4, _ action: @escaping () -> Void) -> some View {
+        Button("閉じる") {
             withAnimation(.easeInOut(duration: 0.18)) { action() }
         }
         .font(Theme.font(14))
         .foregroundStyle(Theme.inkSoft)
         .frame(maxWidth: .infinity)
-        .padding(.top, 4)
+        .padding(.top, topPadding)
     }
 
     /// 設定の1行。ふだんは値だけ見せて、押すと編集が開く。
