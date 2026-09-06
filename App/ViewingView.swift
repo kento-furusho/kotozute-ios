@@ -297,12 +297,6 @@ struct ViewingView: View {
                     .clipShape(Capsule())
             }
             .padding(.top, 12)
-
-            Text("急がなくていい。気が向いたときに。")
-                .font(Theme.font(12))
-                .foregroundStyle(Theme.inkSoft)
-                .frame(maxWidth: .infinity)
-                .padding(.top, 4)
         }
     }
 
