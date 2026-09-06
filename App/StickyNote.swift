@@ -49,7 +49,9 @@ struct StickyNote: View {
         formatter.locale = Locale(identifier: "ja_JP")
         // 端末が和暦でも表示がぶれないようにする。
         formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.dateFormat = "M月d日"
+        // 時刻まで出す。同じ日に何枚か書いた週に、どれが先か分かるようにする。
+        // 端末のタイムゾーンで出す（読んでいる人の時計に合わせる）。
+        formatter.dateFormat = "M月d日 H:mm"
         return formatter
     }()
 }
