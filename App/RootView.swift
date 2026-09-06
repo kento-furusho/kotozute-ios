@@ -72,6 +72,8 @@ struct SignedInView: View {
     @State private var wall: WallStore
     /// 最初の1枚の画面を通過したか。書いたかどうかではなく「通ったか」で判断する
     /// （「あとで」を選んだ人を毎回そこへ戻さないため）。
+    /// ペア未成立のままホームを見ている。招待画面と行き来する。
+    @State private var showsHomeWithoutPair = false
     @AppStorage("hasPassedFirstKotozute") private var hasPassedFirstKotozute = false
 
     init(auth: AuthStore, router: InviteRouter) {
@@ -105,8 +107,16 @@ struct SignedInView: View {
                 } else if !hasPassedFirstKotozute {
                     // 招待より先に「書く」を一度体験してもらう。
                     FirstKotozuteView(store: store) { hasPassedFirstKotozute = true }
+                } else if showsHomeWithoutPair {
+                    // 相手を待つあいだもアプリを使える。ことづてはペア未成立でも
+                    // 書けるので、招待画面で足止めしない。
+                    MainTabView(store: store, auth: auth, wall: wall) {
+                        showsHomeWithoutPair = false
+                    }
                 } else {
-                    InviteView(store: store, auth: auth, router: router)
+                    InviteView(store: store, auth: auth, router: router) {
+                        showsHomeWithoutPair = true
+                    }
                 }
             case .ready:
                 MainTabView(store: store, auth: auth, wall: wall)
@@ -185,6 +195,8 @@ struct InviteView: View {
     @Bindable var store: KotozuteStore
     @Bindable var auth: AuthStore
     @Bindable var router: InviteRouter
+    /// ペアを待たずにアプリへ入る。
+    var onHome: () -> Void = {}
     @State private var enteredCode = ""
     @State private var showsCodeEntry = false
     @State private var isWriting = false
@@ -233,6 +245,11 @@ struct InviteView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                         .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.line, lineWidth: 1))
                         .padding(.top, 6)
+
+                    Text("長押しでコピーできる。")
+                        .font(Theme.font(12))
+                        .foregroundStyle(Theme.inkSoft)
+                        .padding(.top, 6)
                 } else {
                     ProgressView()
                         .padding(.top, 48)
@@ -251,15 +268,15 @@ struct InviteView: View {
                         .padding(.top, 8)
                 }
 
+                // 文字だけのリンクが3つ縦に並んでいて、押せるものだと分かりづらかった。
+                // 枠を付けて、押せることと並びの区切りを見えるようにする。
                 Button("ことづてを書く") { isWriting = true }
-                    .font(Theme.font(15, weight: .bold))
-                    .foregroundStyle(Theme.accent)
+                    .buttonStyle(OutlineButtonStyle(tint: Theme.accent))
                     .padding(.top, 14)
 
                 Button("招待をもらっている") { showsCodeEntry.toggle() }
-                    .font(Theme.font(14))
-                    .foregroundStyle(Theme.inkSoft)
-                    .padding(.top, 32)
+                    .buttonStyle(OutlineButtonStyle())
+                    .padding(.top, 12)
 
                 if showsCodeEntry {
                     HStack(spacing: 10) {
@@ -280,13 +297,13 @@ struct InviteView: View {
                     .padding(.top, 12)
                 }
 
-                Button("サインアウト") {
-                    Task { await auth.signOut() }
-                }
-                .font(Theme.font(13))
-                .foregroundStyle(Theme.inkSoft.opacity(0.7))
-                .padding(.top, 40)
-                .padding(.bottom, 32)
+                // 相手が受けるのを待たずにアプリを使える。ことづてはペア未成立でも
+                // 書けるので、この画面で足止めする理由が無い。
+                // サインアウトはここには置かない（設定にある。戻れなくなるほうが困る）。
+                Button("ホームに戻る") { onHome() }
+                    .buttonStyle(OutlineButtonStyle())
+                    .padding(.top, 32)
+                    .padding(.bottom, 32)
             }
             .padding(.horizontal, 28)
         }

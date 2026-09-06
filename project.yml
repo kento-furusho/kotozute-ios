@@ -30,6 +30,10 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: ことづて
+        # 日本語アプリだと明示する。$(DEVELOPMENT_LANGUAGE) のままだと en になり、
+        # OS が出すメニュー（テキスト選択の Copy / Look Up など）が英語で出る。
+        CFBundleDevelopmentRegion: ja
+        CFBundleLocalizations: [ja]
         # 通信は HTTPS のみで、独自の暗号は積んでいない。
         # 未指定だと TestFlight がビルドごとに輸出コンプライアンスを尋ねてくる。
         ITSAppUsesNonExemptEncryption: false

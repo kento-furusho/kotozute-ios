@@ -5,6 +5,8 @@ import UIKit
 struct SettingsView: View {
     @Bindable var store: KotozuteStore
     @Bindable var auth: AuthStore
+    /// ペア未成立のとき、招待画面へ戻る。
+    var onInvite: () -> Void = {}
 
     @State private var dayOfWeek = 5
     @State private var hour = 20
@@ -133,12 +135,20 @@ struct SettingsView: View {
                 }
                 .padding(.vertical, 12)
 
-                Button(isDissolving ? "解消中…" : "ペアを解消する") {
-                    showsDissolveConfirm = true
+                // ペア未成立でもホームに入れるようになったので、
+                // ここから招待画面へ戻れないと行き止まりになる。
+                if store.partnerName.isEmpty {
+                    Button("ペアを組む") { onInvite() }
+                        .font(Theme.font(15))
+                        .foregroundStyle(Theme.accent)
+                } else {
+                    Button(isDissolving ? "解消中…" : "ペアを解消する") {
+                        showsDissolveConfirm = true
+                    }
+                    .font(Theme.font(15))
+                    .foregroundStyle(Theme.inkSoft)
+                    .disabled(isDissolving)
                 }
-                .font(Theme.font(15))
-                .foregroundStyle(Theme.inkSoft)
-                .disabled(isDissolving)
 
                 Divider().padding(.vertical, 28)
 

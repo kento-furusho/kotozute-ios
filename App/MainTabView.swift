@@ -8,6 +8,8 @@ struct MainTabView: View {
     @Bindable var store: KotozuteStore
     @Bindable var auth: AuthStore
     @Bindable var wall: WallStore
+    /// ペア未成立のとき、設定から招待画面へ戻す。
+    var onInvite: () -> Void = {}
 
     /// 「見る」と「壁」はどちらもことづてを読む画面で違いが分かりにくかったので、
     /// 「見る」ひとつにまとめた（中身は上がいまのサイクル、下が壁）。
@@ -78,7 +80,7 @@ struct MainTabView: View {
         case .read:
             ViewingView(store: store, wall: wall) { selection = .write }
         case .settings:
-            SettingsView(store: store, auth: auth)
+            SettingsView(store: store, auth: auth, onInvite: onInvite)
         }
     }
 
