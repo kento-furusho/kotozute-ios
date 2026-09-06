@@ -168,7 +168,7 @@ struct ViewingView: View {
     }
 
     private var emptyNote: some View {
-        Text("まだ無い。")
+        Text("まだ何も書いていない。")
             .font(Theme.font(15))
             .foregroundStyle(Theme.inkSoft)
     }
@@ -194,10 +194,11 @@ struct ViewingView: View {
             // 「いま書いているサイクル」で、この画面が映しているのは
             // 読むサイクル。別の期間の話を混ぜることになる。
             if state.lastCycleMine.isEmpty {
-                Text("この期間のことづては無い。")
-                    .font(Theme.font(15))
-                    .foregroundStyle(Theme.inkSoft)
-                    .padding(.top, 8)
+                section(myTitle) {
+                    Text("この期間は書いていない。")
+                        .font(Theme.font(15))
+                        .foregroundStyle(Theme.inkSoft)
+                }
             } else {
                 mineSection(state.lastCycleMine)
             }
