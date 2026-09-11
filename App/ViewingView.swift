@@ -43,6 +43,24 @@ struct ViewingView: View {
                     .padding(20)
                     .padding(.bottom, 24)
                 }
+                // 横に払って期間を送る。上下のスクロールと同じ場所で受けるので、
+                // 横の動きが縦よりはっきり大きいときだけ拾う。
+                // simultaneousGesture にしないと、スクロール自体が効かなくなる。
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 24).onEnded { drag in
+                        let width = drag.translation.width
+                        let height = drag.translation.height
+                        guard abs(width) > 60, abs(width) > abs(height) * 1.5 else { return }
+                        Task {
+                            // 左に払う＝紙を左へ送る＝新しいほうへ。矢印の向きと合わせる。
+                            if width < 0 {
+                                await wall.showNewer()
+                            } else {
+                                await wall.showOlder()
+                            }
+                        }
+                    }
+                )
             }
             .navigationTitle("ことづて")
             .navigationBarTitleDisplayMode(.inline)
