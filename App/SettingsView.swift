@@ -1,7 +1,10 @@
 import SwiftUI
-import UIKit
 
-/// 設定。いまはオープンの曜日・時刻とサインアウトだけ。
+/// 設定。ニックネーム、オープンの曜日・時刻、ペア、アカウント。
+///
+/// 通知の切り替えは置かない。iOS では一度断られるとアプリから再度
+/// 尋ねられず、結局 iPhone の設定へ送ることになる。案内だけ置いても
+/// 画面が増えるだけなので、はじめから OS の設定に任せる。
 struct SettingsView: View {
     @Bindable var store: KotozuteStore
     @Bindable var auth: AuthStore
@@ -13,7 +16,6 @@ struct SettingsView: View {
     @State private var minute = 0
     @State private var isSaving = false
     @State private var message: String?
-    private var push: PushStore { PushStore.shared }
     @State private var showsDeleteConfirm = false
     @State private var isDeleting = false
     @State private var showsDissolveConfirm = false
@@ -31,7 +33,7 @@ struct SettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                Text("なまえ")
+                Text("ニックネーム")
                     .font(Theme.font(18, weight: .bold))
                     .foregroundStyle(Theme.ink)
 
@@ -107,7 +109,12 @@ struct SettingsView: View {
                                 openTime: String(format: "%02d:%02d", hour, minute)
                             )
                             isSaving = false
-                            if message == nil { message = "変更した。" }
+                            // うまくいったら黙って閉じる。閉じた先に新しい値が出るので、
+                            // それが結果の知らせになる。「変更した。」と言い足すと、
+                            // 画面が言っていることを文で繰り返すことになる。
+                            if message == nil {
+                                withAnimation(.easeInOut(duration: 0.18)) { isEditingSchedule = false }
+                            }
                         }
                     } label: {
                         Group {
@@ -130,14 +137,6 @@ struct SettingsView: View {
                         closeButton(topPadding: 16) { isEditingSchedule = false }
                     }
                 }
-
-                Divider().padding(.vertical, 28)
-
-                Text("お知らせ")
-                    .font(Theme.font(18, weight: .bold))
-                    .foregroundStyle(Theme.ink)
-
-                notifications
 
                 Divider().padding(.vertical, 28)
 
@@ -213,7 +212,6 @@ struct SettingsView: View {
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("設定")
         .navigationBarTitleDisplayMode(.inline)
-        .task { await push.refresh() }
         // ことづては消えない。消えるのは関係のほうだと分かるように書く。
         .alert("ペアを解消する", isPresented: $showsDissolveConfirm) {
             Button("解消する", role: .destructive) {
@@ -255,46 +253,10 @@ struct SettingsView: View {
 
     /// オープンの通知。断られていても催促にはしない。
     @ViewBuilder
-    private var notifications: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if push.isAuthorized {
-                Text("オープンの日に、お知らせが届く。")
-                    .font(Theme.font(15))
-                    .foregroundStyle(Theme.ink)
-            } else if push.hasAsked {
-                // 2度目からは OS がダイアログを出さないので、設定アプリへ送る。
-                Text("お知らせは切ってある。")
-                    .font(Theme.font(15))
-                    .foregroundStyle(Theme.ink)
-                Button("iPhone の設定を開く") {
-                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                        UIApplication.shared.open(url)
-                    }
-                }
-                .font(Theme.font(15))
-                .foregroundStyle(Theme.accent)
-            } else {
-                Text("オープンの日にお知らせを受け取る。")
-                    .font(Theme.font(15))
-                    .foregroundStyle(Theme.ink)
-                Button("お知らせを受け取る") {
-                    Task {
-                        await push.requestAuthorization()
-                        await store.syncPushToken(push.deviceToken)
-                    }
-                }
-                .font(Theme.font(15))
-                .foregroundStyle(Theme.accent)
-            }
-        }
-        .padding(.vertical, 12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
     /// 表示名。空のまま保存はできない（サーバーも 400 で弾く）。
     private var displayName: some View {
         VStack(alignment: .leading, spacing: 10) {
-            TextField("なまえ", text: $name)
+            TextField("ニックネーム", text: $name)
                 .font(Theme.font(17))
                 .foregroundStyle(Theme.ink)
                 .textInputAutocapitalization(.never)
@@ -314,8 +276,12 @@ struct SettingsView: View {
             Button {
                 Task {
                     isSavingName = true
-                    nameMessage = await store.updateDisplayName(name) ?? "変更した。"
+                    let failure = await store.updateDisplayName(name)
                     isSavingName = false
+                    nameMessage = failure
+                    if failure == nil {
+                        withAnimation(.easeInOut(duration: 0.18)) { isEditingName = false }
+                    }
                 }
             } label: {
                 Text(isSavingName ? "保存中…" : "この名前にする")

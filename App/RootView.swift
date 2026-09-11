@@ -158,7 +158,7 @@ struct ProfileSetupView: View {
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
-            Text("名前")
+            Text("ニックネーム")
                 .font(Theme.font(26, weight: .bold))
                 .foregroundStyle(Theme.ink)
             TextField("けんと", text: $displayName)
