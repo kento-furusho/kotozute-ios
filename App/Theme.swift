@@ -27,6 +27,17 @@ enum Theme {
         }
     }
 
+    /// 付箋の色（濃いほう）。ここが色の出どころ。
+    /// 選択肢も巡回もこれを使うので、増やすと両方に効く。
+    static let stickyBaseHexes: [String] = [
+        "FFDC72", "B9E6D0", "FFC0AB", "C4DAF6", "DCC8F8", "F7B9CE",
+    ]
+
+    /// 巡回の index に対応する16進数。
+    static func stickyHex(at index: Int) -> String {
+        stickyBaseHexes[index % stickyBaseHexes.count]
+    }
+
     /// 書いた順に巡回させて、並びが単調にならないようにする。
     static let stickyPapers: [StickyPaper] = [
         StickyPaper(light: Color(hex: 0xFFE9A0), base: Color(hex: 0xFFDC72)),
