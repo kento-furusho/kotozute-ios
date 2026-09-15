@@ -58,8 +58,7 @@ struct ComposeView: View {
         }
         .sheet(item: $editing) { item in
             WriteView(title: "書き直す", initialBody: item.body, initialColor: item.color) { body, color in
-                // 書き直しで「おまかせ」に戻したら、色を外す指示を送る。
-                // 省略すると「触らない」扱いになり、前の色が残ってしまう。
+                // 色は常に送る。選び直していなくても、開いたときの色がそのまま入る。
                 Task { editError = await store.edit(id: item.id, body: body, color: color) }
             }
         }
