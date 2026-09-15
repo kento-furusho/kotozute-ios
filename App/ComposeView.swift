@@ -8,6 +8,9 @@ struct ComposeView: View {
     @Bindable var store: KotozuteStore
 
     @State private var body_ = ""
+    /// 選んだ色。空は「まだ触っていない」。
+    /// そのときは巡回の次の色が選ばれているものとして扱う。
+    @State private var color = ""
     @State private var isSaving = false
     @FocusState private var isFocused: Bool
     /// 1枚ずつ読む画面。書きためた分をタップすると開く。
@@ -25,6 +28,9 @@ struct ComposeView: View {
 
                     editor
                         .padding(.top, 20)
+
+                    ColorChooser(selection: effectiveColor)
+                        .padding(.top, 16)
 
                     WritingHint()
                         .padding(.top, 18)
@@ -51,8 +57,10 @@ struct ComposeView: View {
             KotozuteDetailView(detail: detail, onEdit: { editing = $0 })
         }
         .sheet(item: $editing) { item in
-            WriteView(title: "書き直す", initialBody: item.body) { body in
-                Task { editError = await store.edit(id: item.id, body: body) }
+            WriteView(title: "書き直す", initialBody: item.body, initialColor: item.color) { body, color in
+                // 書き直しで「おまかせ」に戻したら、色を外す指示を送る。
+                // 省略すると「触らない」扱いになり、前の色が残ってしまう。
+                Task { editError = await store.edit(id: item.id, body: body, color: color) }
             }
         }
         .alert("書き直せなかった", isPresented: .constant(editError != nil)) {
@@ -60,6 +68,28 @@ struct ComposeView: View {
         } message: {
             Text(editError ?? "")
         }
+    }
+
+    /// まだ色を触っていないときに選ばれている色。
+    ///
+    /// 壁では自分の分を colorOffset 4 で並べ、配列の位置で色が決まる。
+    /// いま書いている分の次に足されるので、位置は枚数そのもの。
+    /// その「次に来る色」を最初から選んでおくことで、何も触らなければ
+    /// これまでどおりの巡回した見た目になる。
+    private var autoPaper: Theme.StickyPaper {
+        Theme.stickyPaper(at: store.myKotozute.count + 4)
+    }
+
+    private var autoHex: String {
+        Theme.stickyHex(at: store.myKotozute.count + 4)
+    }
+
+    /// 画面に見せる選択。触っていなければ巡回の色、触ったらその色。
+    private var effectiveColor: Binding<String> {
+        Binding(
+            get: { color.isEmpty ? autoHex : color },
+            set: { color = $0 }
+        )
     }
 
     private var editor: some View {
@@ -81,7 +111,8 @@ struct ComposeView: View {
         // 付箋は正方形に近いほうがそれらしく見える。横幅は画面に合わせて伸びるので、
         // 高さで寄せる。
         .frame(height: 290)
-        .background(Theme.stickyPaper(at: 0).gradient)
+        // 選んだ色をそのまま下地にする。書いている紙が仕上がりと同じになる。
+        .background((Theme.stickyPaper(hex: effectiveColor.wrappedValue) ?? autoPaper).gradient)
         .clipShape(RoundedRectangle(cornerRadius: 3))
         .shadow(color: Theme.ink.opacity(0.24), radius: 9, y: 7)
     }
@@ -90,7 +121,7 @@ struct ComposeView: View {
         Button {
             Task {
                 isSaving = true
-                await store.write(body_)
+                await store.write(body_, color: effectiveColor.wrappedValue)
                 isSaving = false
                 body_ = ""
                 isFocused = false

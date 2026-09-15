@@ -5,17 +5,26 @@ import SwiftUI
 /// 編集は書くサイクルのものだけ。オープン済みは確定扱いで、サーバーが 409 で弾く。
 struct WriteView: View {
     let title: String
-    let onSave: (String) -> Void
+    let onSave: (String, String) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var body_: String
+    @State private var color: String
     @FocusState private var isFocused: Bool
 
-    /// - Parameter initialBody: 空なら新規、入っていれば書き直し。
-    init(title: String = "ことづてを書く", initialBody: String = "", onSave: @escaping (String) -> Void) {
+    /// - Parameters:
+    ///   - initialBody: 空なら新規、入っていれば書き直し。
+    ///   - initialColor: 書き直しのときは元の色。新規は既定の1色目。
+    init(
+        title: String = "ことづてを書く",
+        initialBody: String = "",
+        initialColor: String? = nil,
+        onSave: @escaping (String, String) -> Void
+    ) {
         self.title = title
         self.onSave = onSave
         _body_ = State(initialValue: initialBody)
+        _color = State(initialValue: initialColor ?? Theme.stickyHex(at: 0))
     }
 
     var body: some View {
@@ -37,10 +46,14 @@ struct WriteView: View {
                         .focused($isFocused)
                 }
                 .frame(height: 220)
-                .background(Theme.stickyPaper(at: 0).gradient)
+                // 選んだ色をそのまま下地にする。書いている紙が仕上がりと同じになる。
+                .background((Theme.stickyPaper(hex: color) ?? Theme.stickyPaper(at: 0)).gradient)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
                 .shadow(color: .black.opacity(0.08), radius: 6, y: 3)
                 .padding(20)
+
+                ColorChooser(selection: $color)
+                    .padding(.horizontal, 20)
 
                 Spacer()
             }
@@ -54,7 +67,7 @@ struct WriteView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("しまう") {
-                        onSave(body_)
+                        onSave(body_, color)
                         dismiss()
                     }
                     .font(Theme.font(17, weight: .bold))

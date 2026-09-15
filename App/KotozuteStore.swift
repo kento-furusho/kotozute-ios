@@ -195,20 +195,22 @@ final class KotozuteStore {
         }
     }
 
-    func write(_ body: String) async {
+    func write(_ body: String, color: String? = nil) async {
         let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
         guard let client else {
             // 通信しないモード。手元の配列を更新して画面の動きだけ確かめる。
-            myKotozute.append(Kotozute(id: UUID().uuidString, body: trimmed, createdAt: Date()))
+            myKotozute.append(
+                Kotozute(id: UUID().uuidString, body: trimmed, createdAt: Date(), color: color)
+            )
             rebuildDemoState()
             return
         }
 
         do {
             // ペア未成立でも書ける（ことづては書いた人の下に保存される）。
-            _ = try await client.createKotozute(CreateKotozuteRequest(body: trimmed))
+            _ = try await client.createKotozute(CreateKotozuteRequest(body: trimmed, color: color))
             // 書くと相互ロックが外れることがあるので、状態を取り直す。
             await load()
         } catch {
@@ -218,12 +220,15 @@ final class KotozuteStore {
 
     /// 本文の書き直し。書くサイクルのものだけ通る。
     /// オープン済みならサーバーが 409 を返すので、その旨を伝えて状態を取り直す。
-    func edit(id: String, body: String) async -> String? {
+    func edit(id: String, body: String, color: String? = nil) async -> String? {
         guard let client else { return nil }
         let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
         do {
-            _ = try await client.updateKotozute(id: id, body: UpdateKotozuteRequest(body: trimmed))
+            _ = try await client.updateKotozute(
+                id: id,
+                body: UpdateKotozuteRequest(body: trimmed, color: color)
+            )
             await load()
             return nil
         } catch APIError.conflict {

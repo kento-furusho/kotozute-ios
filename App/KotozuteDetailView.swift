@@ -47,7 +47,8 @@ struct KotozuteDetailView: View {
                             Spacer(minLength: 0)
                             StickyNote(
                                 kotozute: item,
-                                paper: Theme.stickyPaper(at: offset + detail.colorOffset),
+                                paper: item.color.flatMap(Theme.stickyPaper(hex:))
+                                    ?? Theme.stickyPaper(at: offset + detail.colorOffset),
                                 tilt: offset.isMultiple(of: 2) ? -1.4 : 1.2,
                                 tapeTilt: offset.isMultiple(of: 2) ? -2.0 : 1.6,
                                 isLarge: true
