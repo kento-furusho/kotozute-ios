@@ -43,7 +43,7 @@ struct ColorChooser: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Button { selection = "" } label: { autoSwatch }
+            Button(action: roll) { autoSwatch }
                 .buttonStyle(.plain)
 
             ForEach(Self.presets, id: \.self) { hex in
@@ -67,6 +67,16 @@ struct ColorChooser: View {
         }
     }
 
+    /// 押すたびに既定の色から1つ引く。いまと同じ色は引かないので、必ず変わる。
+    ///
+    /// 押す前は「おまかせ」（色を持たず、並び順で決まる）。一度押すと、
+    /// 引いた色がそのことづての色になる。書く画面を開き直すとおまかせに戻る。
+    private func roll() {
+        let candidates = Self.presets.filter { $0.caseInsensitiveCompare(selection) != .orderedSame }
+        guard let picked = candidates.randomElement() else { return }
+        selection = picked
+    }
+
     /// おまかせ。既定の色を回した輪にして、「どれか1色ではない」ことを見せる。
     private var autoSwatch: some View {
         Circle()
@@ -78,7 +88,7 @@ struct ColorChooser: View {
                     .stroke(Theme.ink.opacity(isAuto ? 0.55 : 0), lineWidth: 2)
                     .padding(-4)
             )
-            .accessibilityLabel(isAuto ? "おまかせ（選択中）" : "おまかせ")
+            .accessibilityLabel("色をランダムに選ぶ")
     }
 
     private func swatch(color: Color, isSelected: Bool) -> some View {
