@@ -185,6 +185,18 @@ struct SettingsView: View {
                     .foregroundStyle(Theme.accent)
                     .padding(.top, 12)
 
+                Link("サポート", destination: Config.supportURL)
+                    .font(Theme.font(15))
+                    .foregroundStyle(Theme.accent)
+                    .padding(.top, 12)
+
+                // 不適切な内容を報告する手段。App Store のガイドライン 1.2 が
+                // ユーザーの書いたものを見せるアプリに求めている。
+                Link("問題を報告する", destination: Config.reportMailURL(userID: store.myUserID))
+                    .font(Theme.font(15))
+                    .foregroundStyle(Theme.accent)
+                    .padding(.top, 12)
+
                 Divider().padding(.vertical, 28)
 
                 Text("アカウント")

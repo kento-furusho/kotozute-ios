@@ -18,4 +18,33 @@ enum Config {
     /// リダイレクトを1回挟むことになる。
     static let termsURL = URL(string: "https://kotozute.app/terms")!
     static let privacyURL = URL(string: "https://kotozute.app/privacy")!
+    static let supportURL = URL(string: "https://kotozute.app/support")!
+
+    /// 問題を報告するためのメール。
+    ///
+    /// App Store のガイドライン 1.2 は、ユーザーが書いたものを他のユーザーに
+    /// 見せるアプリに「不適切な内容を報告する手段」を求めている。
+    /// ことづては招待した相手としか交換しないが、手段が無いこと自体を
+    /// 理由に差し戻されることがあるので置いておく。
+    ///
+    /// 調べるのに要る情報（版と自分のID）を本文に入れておく。
+    /// 送る前に本人が消せるよう、メールの下書きに置くだけにする。
+    static func reportMailURL(userID: String) -> URL {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+        let body = """
+
+
+        ————————
+        調べるのに使います。消さずに送ってください。
+        バージョン: \(version) (\(build))
+        ユーザーID: \(userID)
+        """
+        var components = URLComponents(string: "mailto:support@kotozute.app")!
+        components.queryItems = [
+            URLQueryItem(name: "subject", value: "ことづて 問題の報告"),
+            URLQueryItem(name: "body", value: body),
+        ]
+        return components.url ?? URL(string: "mailto:support@kotozute.app")!
+    }
 }

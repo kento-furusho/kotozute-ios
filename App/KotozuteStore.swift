@@ -21,6 +21,8 @@ final class KotozuteStore {
     private(set) var homeState: HomeState?
     /// 自分の表示名。相手の画面では「◯◯のことづて」の◯◯になる。
     private(set) var myName = ""
+    /// 問い合わせのときに、どのアカウントの話かを伝えるのに使う。
+    private(set) var myUserID = ""
     private(set) var partnerName = ""
     private(set) var timezone = TimeZone(identifier: "Asia/Tokyo") ?? .current
     /// オープンの曜日（0=日〜6=土）と時刻（"HH:MM"）。設定画面で変える。
@@ -62,6 +64,7 @@ final class KotozuteStore {
             }
 
             myName = me.displayName
+            myUserID = me.userId
 
             guard me.pairStatus == .paired else {
                 // ペア成立前に書いた分も、招待画面で見せたいので取っておく。
