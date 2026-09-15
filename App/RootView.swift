@@ -312,7 +312,9 @@ struct InviteView: View {
         // 開いた時点でリンクを用意しておく。誘うのが目的の画面なので、
         // 「つくる」を挟まずそのまま送れるようにする。
         .sheet(isPresented: $isWriting) {
-            WriteView { body, color in Task { await store.write(body, color: color) } }
+            WriteView { body, color in
+                Task { await store.write(body, color: color.isEmpty ? nil : color) }
+            }
         }
         .task {
             if store.inviteToken == nil { await store.createInvite() }

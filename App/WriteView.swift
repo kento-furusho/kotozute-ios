@@ -24,7 +24,7 @@ struct WriteView: View {
         self.title = title
         self.onSave = onSave
         _body_ = State(initialValue: initialBody)
-        _color = State(initialValue: initialColor ?? "FFDC72")
+        _color = State(initialValue: initialColor ?? "")
     }
 
     var body: some View {
@@ -52,7 +52,7 @@ struct WriteView: View {
                 .shadow(color: .black.opacity(0.08), radius: 6, y: 3)
                 .padding(20)
 
-                ColorChooser(selection: $color)
+                ColorChooser(selection: $color, autoColor: Theme.stickyPaper(at: 0).base)
                     .padding(.horizontal, 20)
 
                 Spacer()
