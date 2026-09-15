@@ -34,7 +34,9 @@ enum Theme {
         StickyPaper(light: Color(hex: 0xFFD6C6), base: Color(hex: 0xFFC0AB)),
         StickyPaper(light: Color(hex: 0xDCE9FB), base: Color(hex: 0xC4DAF6)),
         StickyPaper(light: Color(hex: 0xEFE0FF), base: Color(hex: 0xDCC8F8)),
-        StickyPaper(light: Color(hex: 0xE5D8FB), base: Color(hex: 0xD3C0F5)),
+        // 6色目はもともと5色目とほぼ同じ紫で、隣り合うと見分けがつかなかった。
+        // 桃色（3色目）とも違う、赤みの強いピンクにして色相を散らす。
+        StickyPaper(light: Color(hex: 0xFBD7E4), base: Color(hex: 0xF7B9CE)),
     ]
 
     static func stickyPaper(at index: Int) -> StickyPaper {

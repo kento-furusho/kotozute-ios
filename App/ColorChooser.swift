@@ -16,7 +16,7 @@ struct ColorChooser: View {
 
     /// 既定の色。Theme の付箋色をそのまま使う。
     private static let presets: [String] = [
-        "FFDC72", "B9E6D0", "FFC0AB", "C4DAF6", "DCC8F8", "D3C0F5",
+        "FFDC72", "B9E6D0", "FFC0AB", "C4DAF6", "DCC8F8", "F7B9CE",
     ]
 
     private var isAuto: Bool { selection.isEmpty }
