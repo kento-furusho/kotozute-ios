@@ -75,9 +75,11 @@ struct StickyNoteList: View {
             spacing: 24
         ) {
             ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                // 書いた人が色を選んでいればそれを使う。選んでいなければ並び順から決める。
                 let note = StickyNote(
                     kotozute: item,
-                    paper: Theme.stickyPaper(at: index + colorOffset),
+                    paper: item.color.flatMap(Theme.stickyPaper(hex:))
+                        ?? Theme.stickyPaper(at: index + colorOffset),
                     tilt: Self.tilts[index % Self.tilts.count],
                     tapeTilt: Self.tapeTilts[index % Self.tapeTilts.count]
                 )

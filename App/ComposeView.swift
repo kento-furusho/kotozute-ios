@@ -8,6 +8,8 @@ struct ComposeView: View {
     @Bindable var store: KotozuteStore
 
     @State private var body_ = ""
+    /// 付箋の色。書くたびに選び直せる。既定は1色目。
+    @State private var color = "FFDC72"
     @State private var isSaving = false
     @FocusState private var isFocused: Bool
     /// 1枚ずつ読む画面。書きためた分をタップすると開く。
@@ -25,6 +27,9 @@ struct ComposeView: View {
 
                     editor
                         .padding(.top, 20)
+
+                    ColorChooser(selection: $color)
+                        .padding(.top, 16)
 
                     WritingHint()
                         .padding(.top, 18)
@@ -51,8 +56,8 @@ struct ComposeView: View {
             KotozuteDetailView(detail: detail, onEdit: { editing = $0 })
         }
         .sheet(item: $editing) { item in
-            WriteView(title: "書き直す", initialBody: item.body) { body in
-                Task { editError = await store.edit(id: item.id, body: body) }
+            WriteView(title: "書き直す", initialBody: item.body, initialColor: item.color) { body, color in
+                Task { editError = await store.edit(id: item.id, body: body, color: color) }
             }
         }
         .alert("書き直せなかった", isPresented: .constant(editError != nil)) {
@@ -81,7 +86,8 @@ struct ComposeView: View {
         // 付箋は正方形に近いほうがそれらしく見える。横幅は画面に合わせて伸びるので、
         // 高さで寄せる。
         .frame(height: 290)
-        .background(Theme.stickyPaper(at: 0).gradient)
+        // 選んだ色をそのまま下地にする。書いている紙が仕上がりと同じになる。
+        .background((Theme.stickyPaper(hex: color) ?? Theme.stickyPaper(at: 0)).gradient)
         .clipShape(RoundedRectangle(cornerRadius: 3))
         .shadow(color: Theme.ink.opacity(0.24), radius: 9, y: 7)
     }
@@ -90,7 +96,7 @@ struct ComposeView: View {
         Button {
             Task {
                 isSaving = true
-                await store.write(body_)
+                await store.write(body_, color: color)
                 isSaving = false
                 body_ = ""
                 isFocused = false

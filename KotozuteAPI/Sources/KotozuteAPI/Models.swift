@@ -206,19 +206,26 @@ public struct Kotozute: Decodable, Sendable, Identifiable, Hashable {
     public let id: String
     public let body: String
     public let createdAt: Date
+    /// 書いた人が選んだ付箋の色。6桁の16進数（"FFDC72"）。
+    /// 選んでいなければ nil。その場合は並び順から色を決める。
+    public let color: String?
 
-    public init(id: String, body: String, createdAt: Date) {
+    public init(id: String, body: String, createdAt: Date, color: String? = nil) {
         self.id = id
         self.body = body
         self.createdAt = createdAt
+        self.color = color
     }
 }
 
 public struct CreateKotozuteRequest: Encodable, Sendable {
     public let body: String
+    /// 6桁の16進数。省略すると色を持たない。
+    public let color: String?
 
-    public init(body: String) {
+    public init(body: String, color: String? = nil) {
         self.body = body
+        self.color = color
     }
 }
 
@@ -231,9 +238,13 @@ public struct CreateKotozuteResponse: Decodable, Sendable {
 
 public struct UpdateKotozuteRequest: Encodable, Sendable {
     public let body: String
+    /// 省略（nil）すると色は触らない。`"none"` を送ると色を外す。
+    /// 省略を「消す」にすると、本文だけ直したいときに色まで失われる。
+    public let color: String?
 
-    public init(body: String) {
+    public init(body: String, color: String? = nil) {
         self.body = body
+        self.color = color
     }
 }
 

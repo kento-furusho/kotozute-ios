@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// 色と書体。docs/design/ の付箋デザイン案から拾っている。
 /// トーンは明るい・軽い（ポップ寄り）。
@@ -40,6 +41,21 @@ enum Theme {
         stickyPapers[index % stickyPapers.count]
     }
 
+    /// 選ばれた色から紙を作る。
+    ///
+    /// 保存されているのは1色だけなので、上側の明るい色はここで作る。
+    /// 白を少し混ぜて、既定の6色と同じ「上が明るく下が濃い」紙に見せる。
+    /// 混ぜないと単色のベタ塗りになり、他の付箋と質感が揃わない。
+    ///
+    /// 読めない色（16進6桁でないもの）は nil を返す。サーバーが弾いている
+    /// はずだが、ここでも落とせるようにしておく。
+    static func stickyPaper(hex: String) -> StickyPaper? {
+        let trimmed = hex.hasPrefix("#") ? String(hex.dropFirst()) : hex
+        guard trimmed.count == 6, let value = UInt32(trimmed, radix: 16) else { return nil }
+        let base = Color(hex: value)
+        return StickyPaper(light: base.mixedWithWhite(0.34), base: base)
+    }
+
     /// 単色が要る場所（書く画面の下地など）向け。
     static func stickyColor(at index: Int) -> Color {
         stickyPaper(at: index).base
@@ -59,5 +75,34 @@ extension Color {
             green: Double((hex >> 8) & 0xFF) / 255,
             blue: Double(hex & 0xFF) / 255
         )
+    }
+
+    /// 白を `amount` のぶんだけ混ぜる。紙の上側の明るい色を作るのに使う。
+    ///
+    /// SwiftUI の `mix(with:by:)` は iOS 18 から。このアプリは 17 も見るので、
+    /// 成分を取り出して自分で混ぜる。
+    func mixedWithWhite(_ amount: Double) -> Color {
+        let ratio = min(max(amount, 0), 1)
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        guard UIColor(self).getRed(&red, green: &green, blue: &blue, alpha: &alpha) else {
+            return self
+        }
+        return Color(
+            red: Double(red) + (1 - Double(red)) * ratio,
+            green: Double(green) + (1 - Double(green)) * ratio,
+            blue: Double(blue) + (1 - Double(blue)) * ratio
+        )
+    }
+
+    /// 16進6桁に戻す。選んだ色を保存するときに使う。
+    /// UIColor 経由で成分を取り出す（Color は成分を直接読めない）。
+    var hexString: String? {
+        guard let components = UIColor(self).cgColor.components, components.count >= 3 else {
+            return nil
+        }
+        let channels = components.prefix(3).map { component -> Int in
+            Int((min(max(component, 0), 1) * 255).rounded())
+        }
+        return String(format: "%02X%02X%02X", channels[0], channels[1], channels[2])
     }
 }
