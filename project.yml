@@ -34,7 +34,7 @@ targets:
         # 下の MARKETING_VERSION / CURRENT_PROJECT_VERSION は効かない。
         # 実際 0.1 と書いてあるのに 1.0 で出ていた。版を上げるときはここを直す。
         CFBundleShortVersionString: "1.0"
-        CFBundleVersion: "4"
+        CFBundleVersion: "5"
         # 日本語アプリだと明示する。$(DEVELOPMENT_LANGUAGE) のままだと en になり、
         # OS が出すメニュー（テキスト選択の Copy / Look Up など）が英語で出る。
         CFBundleDevelopmentRegion: ja
@@ -74,7 +74,7 @@ targets:
         DEVELOPMENT_TEAM: 5V6S74G5N9
         CODE_SIGN_STYLE: Automatic
         MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "4"
+        CURRENT_PROJECT_VERSION: "5"
         # iPhone のみ。
         TARGETED_DEVICE_FAMILY: "1"
         # アイコンが無いと App Store Connect へのアップロードが弾かれる
