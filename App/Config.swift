@@ -33,12 +33,14 @@ enum Config {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
         let body = """
+        （こちらにお困りの内容をご記入ください）
 
 
-        ————————
-        調べるのに使います。消さずに送ってください。
-        バージョン: \(version) (\(build))
-        ユーザーID: \(userID)
+
+        ――――――――――
+        以下は確認のための情報です。消さずにそのまま送信してください。
+        アプリのバージョン：\(version)（\(build)）
+        ユーザーID：\(userID)
         """
         var components = URLComponents(string: "mailto:support@kotozute.app")!
         components.queryItems = [
