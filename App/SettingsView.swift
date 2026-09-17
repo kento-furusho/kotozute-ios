@@ -19,6 +19,7 @@ struct SettingsView: View {
     @State private var showsDeleteConfirm = false
     @State private var isDeleting = false
     @State private var showsDissolveConfirm = false
+    @State private var showsSignOutConfirm = false
     @State private var isDissolving = false
     @State private var name = ""
     @State private var isSavingName = false
@@ -203,8 +204,10 @@ struct SettingsView: View {
                     .font(Theme.font(18, weight: .bold))
                     .foregroundStyle(Theme.ink)
 
+                // 押し間違えると登録画面まで戻され、入り直すにはパスワードが要る。
+                // 取り返しはつくが手間が大きいので、一度だけ確かめる。
                 Button("サインアウト") {
-                    Task { await auth.signOut() }
+                    showsSignOutConfirm = true
                 }
                 .font(Theme.font(15))
                 .foregroundStyle(Theme.accent)
@@ -225,6 +228,15 @@ struct SettingsView: View {
         .navigationTitle("設定")
         .navigationBarTitleDisplayMode(.inline)
         // ことづては消えない。消えるのは関係のほうだと分かるように書く。
+        .alert("サインアウトする", isPresented: $showsSignOutConfirm) {
+            Button("サインアウト") {
+                Task { await auth.signOut() }
+            }
+            Button("やめる", role: .cancel) {}
+        } message: {
+            // 消えるものは無い、と先に言う。削除と取り違えて身構えさせないため。
+            Text("ことづては消えない。同じメールアドレスで入り直せば、続きから使える。")
+        }
         .alert("ペアを解消する", isPresented: $showsDissolveConfirm) {
             Button("解消する", role: .destructive) {
                 Task {
