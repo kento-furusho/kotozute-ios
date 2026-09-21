@@ -14,3 +14,6 @@ DerivedData/
 # XcodeGen の生成物（project.yml から再生成する）
 Kotozute.xcodeproj/
 App/Info.plist
+
+# xcodebuild の -derivedDataPath（scripts/build-device.sh などが使う）
+.build-ios/

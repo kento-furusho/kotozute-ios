@@ -81,7 +81,7 @@ struct RevealView: View {
                 .opacity(stage == 0 ? 1 : 0.5)
             }
 
-            Button("とじる") { dismiss() }
+            Button("閉じる") { dismiss() }
                 .font(Theme.font(14))
                 .foregroundStyle(Theme.inkSoft)
                 .padding(.top, 14)
