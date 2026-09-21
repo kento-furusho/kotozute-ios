@@ -114,7 +114,7 @@ struct KotozuteDetailView: View {
             // オープンの演出の主ボタンと同じ形にする。閉じる導線がここだけなので、
             // 押せる場所として見えていてほしい。色は主張しないグレーにする。
             Button { dismiss() } label: {
-                Text("とじる")
+                Text("閉じる")
                     .font(Theme.font(17, weight: .bold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)

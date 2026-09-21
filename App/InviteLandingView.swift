@@ -19,7 +19,7 @@ struct InviteLandingView: View {
                     .foregroundStyle(Theme.ink)
                     .multilineTextAlignment(.center)
 
-                Button("とじる") { router.clear() }
+                Button("閉じる") { router.clear() }
                     .font(Theme.font(16, weight: .bold))
                     .foregroundStyle(Theme.accent)
                     .padding(.top, 20)

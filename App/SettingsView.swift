@@ -234,8 +234,7 @@ struct SettingsView: View {
             }
             Button("やめる", role: .cancel) {}
         } message: {
-            // 消えるものは無い、と先に言う。削除と取り違えて身構えさせないため。
-            Text("ことづては消えない。同じメールアドレスで入り直せば、続きから使える。")
+            Text("本当にサインアウトしますか？")
         }
         .alert("ペアを解消する", isPresented: $showsDissolveConfirm) {
             Button("解消する", role: .destructive) {
@@ -247,7 +246,7 @@ struct SettingsView: View {
             }
             Button("やめる", role: .cancel) {}
         } message: {
-            Text("ふたりの交換が終わる。おたがい、また誰かを招待できる。\n\nことづては消えない。じぶんが書いた分は手元に残る。\nただし、これから組む相手には渡らない。")
+            Text("本当にペアを解消しますか？")
         }
         // 何が消えて何が残るかを、押す前に具体的に書く。
         .alert("アカウントを削除する", isPresented: $showsDeleteConfirm) {
@@ -263,7 +262,7 @@ struct SettingsView: View {
             }
             Button("やめる", role: .cancel) {}
         } message: {
-            Text("じぶんが書いたことづてと、アカウントが消える。\nもとに戻せない。\n\nあいてが書いたことづては、あいての手元に残る。\nペアは解消され、あいてはまた誰かを招待できる。")
+            Text("本当に削除しますか？この操作は取り消せません。")
         }
         .onChange(of: store.myName) { _, newName in name = newName }
         .onAppear {

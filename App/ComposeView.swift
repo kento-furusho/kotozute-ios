@@ -63,7 +63,7 @@ struct ComposeView: View {
             }
         }
         .alert("書き直せなかった", isPresented: .constant(editError != nil)) {
-            Button("とじる") { editError = nil }
+            Button("閉じる") { editError = nil }
         } message: {
             Text(editError ?? "")
         }

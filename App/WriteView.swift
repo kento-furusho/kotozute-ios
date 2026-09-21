@@ -66,7 +66,7 @@ struct WriteView: View {
                         .foregroundStyle(Theme.inkSoft)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("しまう") {
+                    Button("保存する") {
                         onSave(body_, color)
                         dismiss()
                     }
