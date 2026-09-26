@@ -70,6 +70,7 @@ struct SignedInView: View {
     @Bindable var router: InviteRouter
     @State private var store: KotozuteStore
     @State private var wall: WallStore
+    @State private var calendar: CalendarStore
     /// 最初の1枚の画面を通過したか。書いたかどうかではなく「通ったか」で判断する
     /// （「あとで」を選んだ人を毎回そこへ戻さないため）。
     /// ペア未成立のままホームを見ている。招待画面と行き来する。
@@ -87,6 +88,7 @@ struct SignedInView: View {
         )
         _store = State(initialValue: KotozuteStore(client: client))
         _wall = State(initialValue: WallStore(client: client))
+        _calendar = State(initialValue: CalendarStore(client: client))
     }
 
     var body: some View {
@@ -110,7 +112,7 @@ struct SignedInView: View {
                 } else if showsHomeWithoutPair {
                     // 相手を待つあいだもアプリを使える。ことづてはペア未成立でも
                     // 書けるので、招待画面で足止めしない。
-                    MainTabView(store: store, auth: auth, wall: wall) {
+                    MainTabView(store: store, auth: auth, wall: wall, calendar: calendar) {
                         showsHomeWithoutPair = false
                     }
                 } else {
@@ -119,7 +121,7 @@ struct SignedInView: View {
                     }
                 }
             case .ready:
-                MainTabView(store: store, auth: auth, wall: wall)
+                MainTabView(store: store, auth: auth, wall: wall, calendar: calendar)
             case let .failed(message):
                 errorView(message)
             }

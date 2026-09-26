@@ -69,7 +69,12 @@ struct KotozuteApp: App {
             let client = KotozuteClient(baseURL: Config.apiBaseURL, tokenProvider: auth.authenticator)
             let store = KotozuteStore(client: nil)
             return AnyView(
-                MainTabView(store: store, auth: auth, wall: WallStore(client: client))
+                MainTabView(
+                    store: store,
+                    auth: auth,
+                    wall: WallStore(client: client),
+                    calendar: CalendarStore(client: client)
+                )
             )
         // 招待画面は「登録済み・ペア未成立」でないと出ないので確認しづらい。
         // --demo-state waiting と併せて使うと1枚目が入った状態で見られる。

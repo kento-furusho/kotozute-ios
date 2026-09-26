@@ -11,8 +11,21 @@ import SwiftUI
 struct ViewingView: View {
     @Bindable var store: KotozuteStore
     @Bindable var wall: WallStore
+    @Bindable var calendar: CalendarStore
     /// ロックされているときに「書く」へ移る。
     var onWrite: () -> Void = {}
+
+    /// 同じ壁を2通りの切り口で見る。週は付箋で、月はカレンダーで。
+    private enum Mode: String, CaseIterable {
+        case notes = "付箋"
+        case calendar = "カレンダー"
+    }
+
+    @State private var mode: Mode = .notes
+    /// 払っている最中の横のずれ。カレンダー側と同じ手応えにする。
+    @State private var dragX: CGFloat = 0
+    /// 次の期間がどちら側から入ってくるか。
+    @State private var incoming: Edge = .trailing
 
     private enum FullScreen: Identifiable {
         case reveal(RevealItems)
@@ -34,33 +47,17 @@ struct ViewingView: View {
             ZStack {
                 Theme.background.ignoresSafeArea()
 
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
-                        weekStepper
-                        weekContent
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(20)
-                    .padding(.bottom, 24)
-                }
-                // 横に払って期間を送る。上下のスクロールと同じ場所で受けるので、
-                // 横の動きが縦よりはっきり大きいときだけ拾う。
-                // simultaneousGesture にしないと、スクロール自体が効かなくなる。
-                .simultaneousGesture(
-                    DragGesture(minimumDistance: 24).onEnded { drag in
-                        let width = drag.translation.width
-                        let height = drag.translation.height
-                        guard abs(width) > 60, abs(width) > abs(height) * 1.5 else { return }
-                        Task {
-                            // 左に払う＝紙を左へ送る＝新しいほうへ。矢印の向きと合わせる。
-                            if width < 0 {
-                                await wall.showNewer()
-                            } else {
-                                await wall.showOlder()
-                            }
+                VStack(spacing: 0) {
+                    modeSwitcher
+
+                    if mode == .calendar {
+                        CalendarMonthView(store: store, calendar: calendar) { detail in
+                            fullScreen = .detail(detail)
                         }
+                    } else {
+                        weekScroll
                     }
-                )
+                }
             }
             .navigationTitle("ことづて")
             .navigationBarTitleDisplayMode(.inline)
@@ -102,6 +99,87 @@ struct ViewingView: View {
         }
     }
 
+    /// 週めくりのほう。付箋をそのまま並べる、もとの見え方。
+    private var weekScroll: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                weekStepper
+
+                // 期間そのものを差し替える。id が変わると、入ってくる週と
+                // 出ていく週が別の view になり、横に流れて入れ替わる。
+                weekContent
+                    .id(wall.index)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: incoming).combined(with: .opacity),
+                        removal: .move(edge: incoming == .trailing ? .leading : .trailing)
+                            .combined(with: .opacity)
+                    ))
+                    .offset(x: dragX)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(20)
+            .padding(.bottom, 24)
+        }
+        .animation(.easeOut(duration: 0.28), value: wall.index)
+        // 横に払って期間を送る。上下のスクロールと同じ場所で受けるので、
+        // 横の動きが縦よりはっきり大きいときだけ拾う。
+        // simultaneousGesture にしないと、スクロール自体が効かなくなる。
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 12)
+                .onChanged { drag in
+                    let width = drag.translation.width
+                    guard abs(width) > abs(drag.translation.height) else { return }
+                    // 送れない向きは、ほとんど動かさずに端であることを伝える。
+                    let canMove = width < 0 ? wall.hasNewer : wall.hasOlder
+                    dragX = width * (canMove ? 0.45 : 0.12)
+                }
+                .onEnded { drag in
+                    let width = drag.translation.width
+                    let height = drag.translation.height
+                    withAnimation(.easeOut(duration: 0.2)) { dragX = 0 }
+                    guard abs(width) > 60, abs(width) > abs(height) * 1.5 else { return }
+                    // 左に払う＝紙を左へ送る＝新しいほうへ。矢印の向きと合わせる。
+                    incoming = width < 0 ? .trailing : .leading
+                    Task {
+                        if width < 0 {
+                            await wall.showNewer()
+                        } else {
+                            await wall.showOlder()
+                        }
+                    }
+                }
+        )
+    }
+
+    /// 「付箋／カレンダー」の切り替え。同じ壁の切り口を選ぶだけなので、
+    /// 画面の上に小さく置く。タブを増やすと「別の場所」に見える。
+    private var modeSwitcher: some View {
+        HStack(spacing: 4) {
+            ForEach(Mode.allCases, id: \.self) { item in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.15)) { mode = item }
+                } label: {
+                    Text(item.rawValue)
+                        .font(Theme.font(13, weight: mode == item ? .bold : .regular))
+                        .foregroundStyle(mode == item ? Theme.ink : Theme.inkSoft)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 7)
+                        .background {
+                            if mode == item {
+                                RoundedRectangle(cornerRadius: 9).fill(.white)
+                            }
+                        }
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(3)
+        .background(Theme.line.opacity(0.55))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(.horizontal, 20)
+        .padding(.bottom, 14)
+    }
+
     private var state: HomeState { store.homeState ?? HomeState(from: .empty) }
     /// いちばん新しい週を見ているか。ここだけ相互ロックがかかる。
     /// 書いているサイクルの終わり＝次のオープン。壁の枠を作るのに要る。
@@ -114,6 +192,7 @@ struct ViewingView: View {
     private var weekStepper: some View {
         HStack {
             Button {
+                incoming = .leading
                 Task { await wall.showOlder() }
             } label: {
                 Image(systemName: "chevron.left")
@@ -132,6 +211,7 @@ struct ViewingView: View {
             Spacer()
 
             Button {
+                incoming = .trailing
                 Task { await wall.showNewer() }
             } label: {
                 Image(systemName: "chevron.right")
