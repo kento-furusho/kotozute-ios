@@ -8,6 +8,7 @@ struct MainTabView: View {
     @Bindable var store: KotozuteStore
     @Bindable var auth: AuthStore
     @Bindable var wall: WallStore
+    @Bindable var calendar: CalendarStore
     /// ペア未成立のとき、設定から招待画面へ戻す。
     var onInvite: () -> Void = {}
 
@@ -78,7 +79,7 @@ struct MainTabView: View {
             // 書いた分もこの画面に並ぶので、「見る」へ飛ばさずここに留まる。
             ComposeView(store: store)
         case .read:
-            ViewingView(store: store, wall: wall) { selection = .write }
+            ViewingView(store: store, wall: wall, calendar: calendar) { selection = .write }
         case .settings:
             SettingsView(store: store, auth: auth, onInvite: onInvite)
         }
