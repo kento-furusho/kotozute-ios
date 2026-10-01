@@ -69,16 +69,20 @@ struct CalendarMonthView: View {
                     // 左に払う＝次の月が右から入ってくる。紙を送る向きと揃える。
                     incoming = width < 0 ? .trailing : .leading
                     Task {
+                        selected = nil
                         if width < 0 {
                             await calendar.showNextMonth()
                         } else {
                             await calendar.showPreviousMonth()
                         }
-                        selected = nil
                     }
                 }
         )
         .task { await calendar.start(timezone: store.timezone) }
+        // 月を開いた直後は何も選ばれておらず、下の欄が空になる。
+        // 今日（その月に無ければ、いちばん新しく書いた日）を選んでおく。
+        .onChange(of: calendar.days) { _, _ in selectDefaultDay() }
+        .onAppear { selectDefaultDay() }
     }
 
     // MARK: - 月の行き来
@@ -113,8 +117,8 @@ struct CalendarMonthView: View {
         Button {
             incoming = systemName == "chevron.right" ? .trailing : .leading
             Task {
-                await action()
                 selected = nil
+                await action()
             }
         } label: {
             Image(systemName: systemName)
@@ -166,13 +170,15 @@ struct CalendarMonthView: View {
             guard !day.isEmpty else { return }
             selected = isSelected(date) ? nil : date
         } label: {
-            VStack(spacing: 3) {
+            VStack(spacing: 4) {
                 dayNumber(date, isThisMonth: isThisMonth)
                 dots(day.mine, colorOffset: 4)
                 dots(day.partner, colorOffset: 2)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 58, alignment: .top)
+            // 選択の輪は数字の丸より外に出るので、その分も含めて高さを取る。
+            // 詰めると、今日や選んだ日だけ点が隠れて、ほかの日と見え方が揃わない。
+            .frame(height: 68, alignment: .top)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -185,10 +191,16 @@ struct CalendarMonthView: View {
             .foregroundStyle(numberColor(date, isThisMonth: isThisMonth))
             .frame(width: 24, height: 24)
             .background {
-                if isToday(date) {
-                    Circle().fill(Theme.accent)
-                } else if isSelected(date) {
-                    Circle().stroke(Theme.ink, lineWidth: 1.5)
+                ZStack {
+                    if isToday(date) {
+                        Circle().fill(Theme.accent)
+                    }
+                    if isSelected(date) {
+                        // 今日の塗りと重なるので、輪は少し外側に置く。
+                        Circle()
+                            .stroke(isToday(date) ? Theme.accent : Theme.ink, lineWidth: 1.5)
+                            .padding(-3)
+                    }
                 }
             }
     }
@@ -268,6 +280,19 @@ struct CalendarMonthView: View {
                 ))
             }
         }
+    }
+
+    /// 月を開いたときに選んでおく日。
+    /// その月に今日があり、ことづてがあれば今日。無ければ、いちばん新しく書いた日。
+    /// どの日にも無ければ選ばない（空の欄を出しても意味がない）。
+    private func selectDefaultDay() {
+        if let selected, isInDisplayedMonth(selected) { return }
+        let days = (weeks.flatMap { $0 }).filter(isInDisplayedMonth)
+        if let today = days.first(where: isToday), !calendar.day(today).isEmpty {
+            selected = today
+            return
+        }
+        selected = days.last(where: { !calendar.day($0).isEmpty })
     }
 
     // MARK: - 日付まわり
