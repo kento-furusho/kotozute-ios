@@ -230,7 +230,10 @@ struct SettingsView: View {
         // ことづては消えない。消えるのは関係のほうだと分かるように書く。
         .alert("サインアウトする", isPresented: $showsSignOutConfirm) {
             Button("サインアウト") {
-                Task { await auth.signOut() }
+                Task {
+                    await store.releasePushToken()
+                    await auth.signOut()
+                }
             }
             Button("やめる", role: .cancel) {}
         } message: {

@@ -141,7 +141,10 @@ struct SignedInView: View {
             .font(Theme.font(16, weight: .bold))
             .foregroundStyle(Theme.accent)
             Button("サインアウト") {
-                Task { await auth.signOut() }
+                Task {
+                    await store.releasePushToken()
+                    await auth.signOut()
+                }
             }
             .font(Theme.font(14))
             .foregroundStyle(Theme.inkSoft)

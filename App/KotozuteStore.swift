@@ -34,8 +34,12 @@ final class KotozuteStore {
     private(set) var isAccepting = false
     private(set) var acceptError: String?
 
-    /// サーバーに送り終えた端末トークン。同じものを何度も送らないための覚え。
-    private var sentPushToken: String?
+    /// サーバーに送り終えた「アカウントと端末トークン」の組。同じものを何度も送らないための覚え。
+    ///
+    /// トークンだけで覚えると、同じ端末で別のアカウントに切り替えたとき
+    /// 「もう送った」と判断して送らない（ストアはサインアウトしても作り直されない）。
+    /// 新しいアカウントに宛先が付かず、通知が届かなかった。
+    private var sentPushTokenKey: String?
 
     /// nil のときは通信せず、手元の値だけで動く（起動引数での画面確認用）。
     private let client: KotozuteClient?
@@ -102,14 +106,31 @@ final class KotozuteStore {
     /// 失敗しても画面には出さない。通知が無くてもアプリは成り立つし、
     /// アプリを開くたびに送り直す機会がある。
     func syncPushToken(_ token: String?) async {
-        guard let client, let token, !token.isEmpty, token != sentPushToken else { return }
+        guard let client, let token, !token.isEmpty, !myUserID.isEmpty else { return }
+        let key = "\(myUserID):\(token)"
+        guard key != sentPushTokenKey else { return }
         do {
             _ = try await client.updateMe(
                 UpdateMeRequest(apnsToken: token, apnsEnvironment: PushStore.environment)
             )
-            sentPushToken = token
+            sentPushTokenKey = key
         } catch {
             print("端末トークンを送れなかった: \(error)")
+        }
+    }
+
+    /// サインアウトの前に呼ぶ。この端末をいまのアカウントの宛先から外す。
+    ///
+    /// 外さないと、サインアウトしたあとも前のアカウント宛ての通知がこの端末に届く。
+    /// 通知文には相手の名前が入るので、次にこの端末を使う人に見えてしまう。
+    /// 失敗しても止めない（次に誰かがサインインすれば、サーバーが宛先を付け替える）。
+    func releasePushToken() async {
+        defer { sentPushTokenKey = nil }
+        guard let client, sentPushTokenKey != nil else { return }
+        do {
+            _ = try await client.updateMe(UpdateMeRequest(apnsToken: ""))
+        } catch {
+            print("端末の登録を外せなかった: \(error)")
         }
     }
 
@@ -154,6 +175,8 @@ final class KotozuteStore {
         guard let client else { return false }
         do {
             try await client.deleteMe()
+            // 端末の登録はサーバーが消している。覚えだけ捨てて、次のアカウントで送り直す。
+            sentPushTokenKey = nil
             return true
         } catch {
             phase = .failed(Self.message(for: error))
