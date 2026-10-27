@@ -205,6 +205,7 @@ struct InviteView: View {
     @State private var enteredCode = ""
     @State private var showsCodeEntry = false
     @State private var isWriting = false
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         ScrollView {
@@ -319,8 +320,11 @@ struct InviteView: View {
         .sheet(isPresented: $isWriting) {
             WriteView { body, color in Task { await store.write(body, color: color) } }
         }
-        .task {
-            if store.inviteToken == nil { await store.createInvite() }
+        // 開くたび・アプリに戻るたびに確かめる。何日も開きっぱなしにしていると、
+        // 期限の切れたリンクを送ってしまう。
+        .task { await store.ensureFreshInvite() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await store.ensureFreshInvite() } }
         }
     }
 
@@ -344,12 +348,21 @@ struct InviteView: View {
 
     /// リンクとコードの両方を載せる。独自スキームのリンクは
     /// アプリによっては押せないので、コードだけでも受け取れるようにする。
+    /// 「リンクを送る」で LINE などに貼られる文。
+    ///
+    /// **送る本人の言葉で、ていねいに。** 以前は「ことづてに誘われている。」で始まっていて、
+    /// 受け取った側の言い方だった（送り主が「私が誘われている」と言っているように読める）。
+    ///
+    /// **App Store のリンクを入れる。** 相手はまだアプリを持っていない。
+    /// 以前は kotozute:// のリンクだけで、LINE やメッセージでは押せる形にならず、
+    /// アプリが無い人が押しても何も起きなかった。入手先も書いていなかった。
     private static func message(token: String) -> String {
         """
-        ことづてに誘われている。
-        kotozute://invite/\(token)
+        「ことづて」というアプリで、ありがとうを送り合いませんか？
+        こちらからダウンロードできます。
+        \(Config.appStoreURL.absoluteString)
 
-        リンクが開けないときは、このコードを入れてほしい:
+        登録したら「招待をもらっている」から、このコードを入れてください。
         \(token)
         """
     }

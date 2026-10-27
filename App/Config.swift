@@ -19,6 +19,8 @@ enum Config {
     static let termsURL = URL(string: "https://kotozute.app/terms")!
     static let privacyURL = URL(string: "https://kotozute.app/privacy")!
     static let supportURL = URL(string: "https://kotozute.app/support")!
+    /// App Store の直リンク。招待の文面に入れて、相手がアプリを入手できるようにする。
+    static let appStoreURL = URL(string: "https://apps.apple.com/jp/app/id6807755962")!
 
     /// 問題を報告するためのメール。
     ///
