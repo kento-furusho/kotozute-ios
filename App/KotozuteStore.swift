@@ -31,6 +31,13 @@ final class KotozuteStore {
     /// サイクルの区切り（古い順）。壁を週ごとにたどるのに使う。
     private(set) var cycleStarts: [Date] = []
     private(set) var inviteToken: String?
+    /// 招待の期限と、誰の招待か。どちらかが合わなければ作り直す。
+    ///
+    /// ストアはサインアウトしても作り直されないので、持ち主を覚えておかないと
+    /// 同じ端末で入り直した別のアカウントに、前のアカウントの招待が出る。
+    /// それを送ると、相手は前のアカウントとペアを組んでしまう。
+    private var inviteExpiresAt: Date?
+    private var inviteOwner: String?
     private(set) var isAccepting = false
     private(set) var acceptError: String?
 
@@ -197,10 +204,25 @@ final class KotozuteStore {
     func createInvite() async {
         guard let client else { return }
         do {
-            inviteToken = try await client.createInvite().token
+            let invite = try await client.createInvite()
+            inviteToken = invite.token
+            inviteExpiresAt = invite.expiresAt
+            inviteOwner = myUserID
         } catch {
             phase = .failed(Self.message(for: error))
         }
+    }
+
+    /// 招待画面を開くたびに呼ぶ。使える招待が手元に無ければ作る。
+    ///
+    /// 期限は7日。期限ぎりぎりのリンクを送ると、相手が開くころには切れているので、
+    /// 残り1日を切ったら作り直す。
+    func ensureFreshInvite() async {
+        let isMine = inviteOwner == myUserID
+        let isFresh = inviteExpiresAt.map { $0.timeIntervalSinceNow > 24 * 60 * 60 } ?? false
+        if inviteToken != nil, isMine, isFresh { return }
+        inviteToken = nil
+        await createInvite()
     }
 
     /// 招待を受けてペアを成立させる。成立したら状態を取り直してホームへ進む。
@@ -213,7 +235,7 @@ final class KotozuteStore {
             _ = try await client.acceptInvite(token: token)
             await load()
         } catch APIError.conflict {
-            acceptError = "この招待はもう使えない。期限切れか、すでに使われている。"
+            acceptError = "この招待は使えません。\n期限が切れているか、すでに使われています。\n\n招待した方に、\n新しいリンクを送ってもらってください。"
         } catch APIError.badRequest {
             acceptError = "自分の招待は受けられない。"
         } catch {
