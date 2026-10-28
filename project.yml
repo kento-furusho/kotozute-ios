@@ -64,6 +64,10 @@ targets:
         # ビルド構成ごとに出し分ける。Debug=development / Release=production。
         # 実機に Xcode から入れたものと、配布したものでは APNs のエンドポイントが別物。
         aps-environment: $(APS_ENVIRONMENT)
+        # 招待リンク https://kotozute.app/invite/<token> をアプリで開く（ユニバーサルリンク）。
+        # kotozute.app の /.well-known/apple-app-site-association と対になる。
+        com.apple.developer.associated-domains:
+          - applinks:kotozute.app
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.kotozute.app
