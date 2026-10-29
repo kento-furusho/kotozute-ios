@@ -145,7 +145,7 @@ struct ComposeView: View {
     /// 見出しといつオープンするか。書く前に見えていてほしい情報だけを置く。
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("今週のことづて")
+            Text("今回のことづて")
                 .font(Theme.font(20, weight: .bold))
                 .foregroundStyle(Theme.ink)
 
@@ -173,7 +173,7 @@ struct ComposeView: View {
                     detail = KotozuteDetail(
                         items: store.myKotozute,
                         startIndex: store.myKotozute.firstIndex(of: tapped) ?? 0,
-                        title: "今週のことづて",
+                        title: "今回のことづて",
                         colorOffset: 0,
                         isEditable: true
                     )

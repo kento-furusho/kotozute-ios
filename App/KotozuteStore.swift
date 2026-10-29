@@ -28,6 +28,8 @@ final class KotozuteStore {
     /// オープンの曜日（0=日〜6=土）と時刻（"HH:MM"）。設定画面で変える。
     private(set) var openDayOfWeek = 5
     private(set) var openTime = "20:00"
+    /// オープンの周期（週）。1=毎週。
+    private(set) var openIntervalWeeks = 1
     /// サイクルの区切り（古い順）。壁を週ごとにたどるのに使う。
     private(set) var cycleStarts: [Date] = []
     private(set) var inviteToken: String?
@@ -94,6 +96,7 @@ final class KotozuteStore {
             timezone = TimeZone(identifier: pair.timezone) ?? timezone
             openDayOfWeek = pair.openDayOfWeek
             openTime = pair.openTime
+            openIntervalWeeks = pair.openIntervalWeeks
             cycleStarts = pair.cycleStarts
 
             // 3. 今週の状態。相互ロックの判定はここに入っている。
@@ -287,12 +290,16 @@ final class KotozuteStore {
         }
     }
 
-    /// オープンの曜日・時刻を変える。成功したら状態を取り直して次回オープン日を更新する。
-    func updateSchedule(openDayOfWeek: Int, openTime: String) async -> String? {
+    /// オープンの曜日・時刻・周期を変える。成功したら状態を取り直して次回オープン日を更新する。
+    func updateSchedule(openDayOfWeek: Int, openTime: String, intervalWeeks: Int) async -> String? {
         guard let client else { return nil }
         do {
             _ = try await client.updatePair(
-                UpdatePairRequest(openDayOfWeek: openDayOfWeek, openTime: openTime)
+                UpdatePairRequest(
+                    openDayOfWeek: openDayOfWeek,
+                    openTime: openTime,
+                    openIntervalWeeks: intervalWeeks
+                )
             )
             await load()
             return nil
