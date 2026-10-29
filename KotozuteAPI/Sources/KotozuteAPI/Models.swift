@@ -155,6 +155,8 @@ public struct PairResponse: Decodable, Sendable {
     public let openDayOfWeek: Int
     /// "HH:MM"（2桁）。
     public let openTime: String
+    /// オープンの周期（週）。1=毎週、2=2週ごと…。古いサーバーは返さないので、無ければ 1。
+    public let openIntervalWeeks: Int
     /// IANA タイムゾーン名（例 Asia/Tokyo）。nextOpenAt の解釈にはこれを使う。
     public let timezone: String
     public let status: String
@@ -164,7 +166,7 @@ public struct PairResponse: Decodable, Sendable {
     public let cycleStarts: [Date]
 
     private enum CodingKeys: String, CodingKey {
-        case pairId, partner, openDayOfWeek, openTime, timezone, status, nextOpenAt, cycleStarts
+        case pairId, partner, openDayOfWeek, openTime, openIntervalWeeks, timezone, status, nextOpenAt, cycleStarts
     }
 
     public init(from decoder: any Decoder) throws {
@@ -173,6 +175,7 @@ public struct PairResponse: Decodable, Sendable {
         partner = try c.decode(Partner.self, forKey: .partner)
         openDayOfWeek = try c.decode(Int.self, forKey: .openDayOfWeek)
         openTime = try c.decode(String.self, forKey: .openTime)
+        openIntervalWeeks = max(1, try c.decodeIfPresent(Int.self, forKey: .openIntervalWeeks) ?? 1)
         timezone = try c.decode(String.self, forKey: .timezone)
         status = try c.decode(String.self, forKey: .status)
         nextOpenAt = try WallClock.decodeOptional(from: c, forKey: .nextOpenAt)
@@ -184,11 +187,19 @@ public struct UpdatePairRequest: Encodable, Sendable {
     public let openDayOfWeek: Int?
     public let openTime: String?
     public let timezone: String?
+    /// オープンの周期（週）。1〜4。
+    public let openIntervalWeeks: Int?
 
-    public init(openDayOfWeek: Int? = nil, openTime: String? = nil, timezone: String? = nil) {
+    public init(
+        openDayOfWeek: Int? = nil,
+        openTime: String? = nil,
+        timezone: String? = nil,
+        openIntervalWeeks: Int? = nil
+    ) {
         self.openDayOfWeek = openDayOfWeek
         self.openTime = openTime
         self.timezone = timezone
+        self.openIntervalWeeks = openIntervalWeeks
     }
 }
 
@@ -197,6 +208,7 @@ public struct UpdatePairResponse: Decodable, Sendable {
     public let openDayOfWeek: Int?
     public let openTime: String?
     public let timezone: String?
+    public let openIntervalWeeks: Int?
 }
 
 // MARK: - ことづて
