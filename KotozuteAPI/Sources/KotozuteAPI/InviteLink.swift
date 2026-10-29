@@ -1,47 +1,32 @@
 import Foundation
 
-/// 招待リンクの形式。2つを受け付ける。
+/// 招待リンクの形式。
 ///
-///     https://kotozute.app/invite/<token>   ← 送るのはこちら（ユニバーサルリンク）
-///     kotozute://invite/<token>              ← 古い形。前に送られたリンクのために残す
+///     kotozute://invite/<token>
 ///
-/// https の形にしたのは、独自スキームのリンクが LINE やメッセージで押せる形にならず、
-/// アプリが入っていない人が押しても何も起きなかったため。https なら
-/// アプリがあればアプリで開き、無ければ kotozute.app の招待ページが開いて App Store へ案内できる。
-/// アプリで開くには、kotozute.app に apple-app-site-association を置き、
-/// アプリに Associated Domains（applinks:kotozute.app）を付ける必要がある。
+/// 独自スキームにしているのは、Universal Links に必要なドメインと
+/// apple-app-site-association をまだ持っていないため。ドメインを用意したら
+/// ここに https の解釈を足す（リンクの見た目が良くなり、アプリ未導入でも案内を出せる）。
 public enum InviteLink {
     public static let scheme = "kotozute"
     public static let host = "invite"
-    public static let webHost = "kotozute.app"
 
-    /// 送るためのリンク（https）。
     public static func url(token: String) -> URL? {
         guard !token.isEmpty else { return nil }
         var components = URLComponents()
-        components.scheme = "https"
-        components.host = webHost
-        components.path = "/invite/\(token)"
+        components.scheme = scheme
+        components.host = host
+        components.path = "/\(token)"
         return components.url
     }
 
     /// リンクからトークンを取り出す。形式が違えば nil。
     /// 未知の URL で誤動作しないよう、スキームとホストの両方を確かめる。
     public static func token(from url: URL) -> String? {
+        guard url.scheme == scheme, url.host == host else { return nil }
         let parts = url.pathComponents.filter { $0 != "/" && !$0.isEmpty }
-        let candidate: String?
-        switch (url.scheme, url.host) {
-        case ("https", webHost):
-            // /invite/<token> だけを受け取る。ほかのページの URL では動かない。
-            guard parts.count == 2, parts[0] == "invite" else { return nil }
-            candidate = parts[1]
-        case (scheme, host):
-            guard parts.count == 1 else { return nil }
-            candidate = parts.first
-        default:
-            return nil
-        }
-        guard let token = candidate, !token.isEmpty else { return nil }
+        // 余計な階層が付いたものは受け取らない。
+        guard parts.count == 1, let token = parts.first, !token.isEmpty else { return nil }
         return token
     }
 }

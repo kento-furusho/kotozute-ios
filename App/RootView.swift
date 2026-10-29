@@ -353,15 +353,14 @@ struct InviteView: View {
     /// **送る本人の言葉で、ていねいに。** 以前は「ことづてに誘われている。」で始まっていて、
     /// 受け取った側の言い方だった（送り主が「私が誘われている」と言っているように読める）。
     ///
-    /// **リンクは https の招待リンク（ユニバーサルリンク）。** アプリがあればアプリで開いて
-    /// そのままペアが組まれ、無ければ kotozute.app の招待ページから App Store へ案内される。
+    /// **App Store のリンクを入れる。** 相手はまだアプリを持っていない。
     /// 以前は kotozute:// のリンクだけで、LINE やメッセージでは押せる形にならず、
-    /// アプリが無い人が押しても何も起きなかった。コードはリンクが開けないときの保険として残す。
+    /// アプリが無い人が押しても何も起きなかった。入手先も書いていなかった。
     private static func message(token: String) -> String {
         """
         「ことづて」というアプリで、ありがとうを送り合いませんか？
         こちらからダウンロードできます。
-        \(InviteLink.url(token: token)?.absoluteString ?? Config.appStoreURL.absoluteString)
+        \(Config.appStoreURL.absoluteString)
 
         登録したら「招待をもらっている」から、このコードを入れてください。
         \(token)
