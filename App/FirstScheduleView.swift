@@ -87,7 +87,7 @@ struct FirstScheduleView: View {
 
     private var chooseView: some View {
         VStack(spacing: 0) {
-            Text("ふたりのことづてが、このペースでまとまる。\nあとから設定で変えられる。")
+            Text("ふたりのことづてが、このペースでまとまります。\nあとから設定で変えられます。")
                 .font(Theme.font(15))
                 .foregroundStyle(Theme.inkSoft)
                 .multilineTextAlignment(.center)

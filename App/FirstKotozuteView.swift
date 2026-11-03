@@ -19,7 +19,7 @@ struct FirstKotozuteView: View {
                 .foregroundStyle(Theme.ink)
                 .padding(.top, 40)
 
-            Text("つながった相手が最初に見るのは、このことづて。")
+            Text("つながった相手が最初に見るのは、このことづてです。")
                 .font(Theme.font(15))
                 .foregroundStyle(Theme.inkSoft)
                 .multilineTextAlignment(.center)

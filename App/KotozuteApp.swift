@@ -128,7 +128,7 @@ struct KotozuteApp: App {
                 do {
                     auth = try AuthStore()
                 } catch {
-                    setupError = "認証の準備に失敗した。\(error.localizedDescription)"
+                    setupError = "認証の準備に失敗しました。\(error.localizedDescription)"
                 }
             }
         }

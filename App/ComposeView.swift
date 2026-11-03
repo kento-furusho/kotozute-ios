@@ -62,7 +62,7 @@ struct ComposeView: View {
                 Task { editError = await store.edit(id: item.id, body: body, color: color) }
             }
         }
-        .alert("書き直せなかった", isPresented: .constant(editError != nil)) {
+        .alert("書き直せませんでした", isPresented: .constant(editError != nil)) {
             Button("閉じる") { editError = nil }
         } message: {
             Text(editError ?? "")

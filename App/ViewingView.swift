@@ -266,7 +266,7 @@ struct ViewingView: View {
     }
 
     private var emptyNote: some View {
-        Text("まだ何も書いていない。")
+        Text("まだ何も書いていません。")
             .font(Theme.font(15))
             .foregroundStyle(Theme.inkSoft)
     }
@@ -293,7 +293,7 @@ struct ViewingView: View {
             // 読むサイクル。別の期間の話を混ぜることになる。
             if state.lastCycleMine.isEmpty {
                 section(myTitle) {
-                    Text("この期間は書いていない。")
+                    Text("この期間は書いていません。")
                         .font(Theme.font(15))
                         .foregroundStyle(Theme.inkSoft)
                 }
@@ -313,7 +313,7 @@ struct ViewingView: View {
                 .font(Theme.font(15))
                 .foregroundStyle(Theme.inkSoft)
         } else if wall.mine.isEmpty, wall.partner.isEmpty {
-            Text("この期間のことづては無い。")
+            Text("この期間のことづてはありません。")
                 .font(Theme.font(15))
                 .foregroundStyle(Theme.inkSoft)
                 .padding(.top, 8)
@@ -412,10 +412,10 @@ struct ViewingView: View {
     /// 罰ではなく交換なので、急かす言い方にしない。
     private var lockedCard: some View {
         infoCard {
-            Text("\(store.partnerName)のことづてが、今回の分そろっている。")
+            Text("\(store.partnerName)のことづてが、今回の分そろっています。")
                 .font(Theme.font(15, weight: .medium))
                 .foregroundStyle(Theme.ink)
-            Text("ひとつ書くと、\(store.partnerName)のことづても見られる。")
+            Text("ひとつ書くと、\(store.partnerName)のことづても読めます。")
                 .font(Theme.font(14))
                 .foregroundStyle(Theme.inkSoft)
 

@@ -27,7 +27,7 @@ struct OnboardingView: View {
                 concept(
                     art: { WeekStrip() },
                     title: "ふたりのペースでオープン",
-                    body: "たまったころに、ふりかえる。\nお互いに書かないと、見れないよ。"
+                    body: "たまったころに、ふりかえります。\nお互いに書かないと、読めません。"
                 ).tag(1)
             }
             .tabViewStyle(.page(indexDisplayMode: .always))
@@ -75,7 +75,7 @@ struct OnboardingView: View {
                 .padding(.top, 10)
                 .appearsInOrder(1)
 
-            Text("「ありがとう」「いいな」と思ったら\nことづてを送ろう。")
+            Text("「ありがとう」「いいな」と思ったら\nことづてを送りましょう。")
                 .font(Theme.font(16))
                 .foregroundStyle(Theme.inkSoft)
                 .multilineTextAlignment(.center)

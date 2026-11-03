@@ -159,7 +159,7 @@ final class KotozuteStore {
     func updateDisplayName(_ name: String) async -> String? {
         guard let client else { return nil }
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return "なまえを入れてほしい。" }
+        guard !trimmed.isEmpty else { return "ニックネームを入力してください。" }
         guard trimmed != myName else { return nil }
         do {
             _ = try await client.updateMe(UpdateMeRequest(displayName: trimmed))
@@ -248,7 +248,7 @@ final class KotozuteStore {
         } catch APIError.conflict {
             acceptError = "この招待は使えません。\n期限が切れているか、すでに使われています。\n\n招待した方に、\n新しいリンクを送ってもらってください。"
         } catch APIError.badRequest {
-            acceptError = "自分の招待は受けられない。"
+            acceptError = "自分の招待は受けられません。"
         } catch {
             acceptError = Self.message(for: error)
         }
@@ -292,7 +292,7 @@ final class KotozuteStore {
             return nil
         } catch APIError.conflict {
             await load()
-            return "オープン済みのことづては書き直せない。"
+            return "オープン済みのことづては書き直せません。"
         } catch {
             return Self.message(for: error)
         }
@@ -324,10 +324,10 @@ final class KotozuteStore {
     private static func message(for error: any Error) -> String {
         guard let error = error as? APIError else { return error.localizedDescription }
         return switch error {
-        case .unauthorized: "サインインし直してほしい。"
-        case .conflict: "いまはその操作ができない。"
-        case let .transport(message): "通信に失敗した。\(message)"
-        default: error.serverMessage ?? "うまくいかなかった。"
+        case .unauthorized: "サインインし直してください。"
+        case .conflict: "いまはその操作ができません。"
+        case let .transport(message): "通信に失敗しました。\(message)"
+        default: error.serverMessage ?? "うまくいきませんでした。"
         }
     }
 
