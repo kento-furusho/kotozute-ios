@@ -43,8 +43,11 @@ struct FirstScheduleView: View {
                 }
             }
             .padding(.horizontal, 28)
-            .padding(.bottom, 32)
+            .padding(.bottom, 24)
         }
+        // 決めるボタンは画面の下に固定する。選ぶ部分の長さに関係なく、
+        // 親指の届く同じ場所にあるほうが押しやすい。
+        .safeAreaInset(edge: .bottom) { bottomButtons }
         .background(Theme.background.ignoresSafeArea())
         .onAppear {
             intervalWeeks = store.openIntervalWeeks
@@ -71,15 +74,6 @@ struct FirstScheduleView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 14))
                 .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line, lineWidth: 1))
                 .padding(.top, 28)
-
-            primaryButton("このままにする") { onDone() }
-                .padding(.top, 32)
-
-            Button("変える") {
-                withAnimation(.easeInOut(duration: 0.18)) { isChanging = true }
-            }
-            .buttonStyle(OutlineButtonStyle())
-            .padding(.top, 12)
         }
     }
 
@@ -87,7 +81,7 @@ struct FirstScheduleView: View {
 
     private var chooseView: some View {
         VStack(spacing: 0) {
-            Text("ふたりのことづてが、このペースでまとまります。\nあとから設定で変えられます。")
+            Text("ふたりのことづてが、このペースでオープンします。\nあとから設定で変えられます。")
                 .font(Theme.font(15))
                 .foregroundStyle(Theme.inkSoft)
                 .multilineTextAlignment(.center)
@@ -109,12 +103,31 @@ struct FirstScheduleView: View {
                     .padding(.top, 8)
             }
 
-            primaryButton(isSaving ? nil : "このペースにする") {
-                Task { await save() }
-            }
-            .disabled(isSaving)
-            .padding(.top, 24)
         }
+    }
+
+    // MARK: - 下に固定するボタン
+
+    @ViewBuilder
+    private var bottomButtons: some View {
+        VStack(spacing: 12) {
+            if decidedByPartner && !isChanging {
+                primaryButton("このままにする") { onDone() }
+                Button("変える") {
+                    withAnimation(.easeInOut(duration: 0.18)) { isChanging = true }
+                }
+                .buttonStyle(OutlineButtonStyle())
+            } else {
+                primaryButton(isSaving ? nil : "このペースにする") {
+                    Task { await save() }
+                }
+                .disabled(isSaving)
+            }
+        }
+        .padding(.horizontal, 28)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
+        .background(Theme.background)
     }
 
     // MARK: - 部品
