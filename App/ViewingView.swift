@@ -412,7 +412,7 @@ struct ViewingView: View {
     /// 罰ではなく交換なので、急かす言い方にしない。
     private var lockedCard: some View {
         infoCard {
-            Text("\(store.partnerName)のことづてが、今週の分そろっている。")
+            Text("\(store.partnerName)のことづてが、今回の分そろっている。")
                 .font(Theme.font(15, weight: .medium))
                 .foregroundStyle(Theme.ink)
             Text("ひとつ書くと、\(store.partnerName)のことづても見られる。")

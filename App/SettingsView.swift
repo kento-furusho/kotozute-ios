@@ -11,6 +11,7 @@ struct SettingsView: View {
     /// ペア未成立のとき、招待画面へ戻る。
     var onInvite: () -> Void = {}
 
+    @State private var intervalWeeks = 1
     @State private var dayOfWeek = 5
     @State private var hour = 20
     @State private var minute = 0
@@ -52,26 +53,35 @@ struct SettingsView: View {
                     .font(Theme.font(18, weight: .bold))
                     .foregroundStyle(Theme.ink)
 
-                Text("この曜日・時刻に、ふたりのことづてがまとまる。")
+                Text("この日に、ふたりのことづてがまとまる。")
                     .font(Theme.font(14))
                     .foregroundStyle(Theme.inkSoft)
                     .padding(.top, 6)
 
                 if !isEditingSchedule {
-                    settingRow(value: "\(Self.weekdays[store.openDayOfWeek])曜 \(store.openTime)") {
+                    settingRow(value: "\(Self.intervalLabel(store.openIntervalWeeks)) \(Self.weekdays[store.openDayOfWeek])曜 \(store.openTime)") {
                         withAnimation(.easeInOut(duration: 0.18)) { isEditingSchedule = true }
                     }
                 }
 
                 if isEditingSchedule {
                     VStack(alignment: .leading, spacing: 0) {
+                    // 周期は週単位。何週ごとに開くか。
+                    Picker("周期", selection: $intervalWeeks) {
+                        ForEach(1...4, id: \.self) { weeks in
+                            Text(Self.intervalLabel(weeks)).tag(weeks)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.top, 18)
+
                     Picker("曜日", selection: $dayOfWeek) {
                         ForEach(0..<7, id: \.self) { index in
                             Text(Self.weekdays[index]).tag(index)
                         }
                     }
                     .pickerStyle(.segmented)
-                    .padding(.top, 18)
+                    .padding(.top, 10)
 
                     HStack(spacing: 0) {
                         Picker("時", selection: $hour) {
@@ -107,7 +117,8 @@ struct SettingsView: View {
                             isSaving = true
                             message = await store.updateSchedule(
                                 openDayOfWeek: dayOfWeek,
-                                openTime: String(format: "%02d:%02d", hour, minute)
+                                openTime: String(format: "%02d:%02d", hour, minute),
+                                intervalWeeks: intervalWeeks
                             )
                             isSaving = false
                             // うまくいったら黙って閉じる。閉じた先に新しい値が出るので、
@@ -271,6 +282,7 @@ struct SettingsView: View {
         .onAppear {
             name = store.myName
             dayOfWeek = store.openDayOfWeek
+            intervalWeeks = store.openIntervalWeeks
             let parts = store.openTime.split(separator: ":")
             hour = parts.count == 2 ? Int(parts[0]) ?? 20 : 20
             minute = parts.count == 2 ? Int(parts[1]) ?? 0 : 0
@@ -374,6 +386,12 @@ struct SettingsView: View {
     /// 変更が無いのに送らない。
     private var hasChanges: Bool {
         dayOfWeek != store.openDayOfWeek
+            || intervalWeeks != store.openIntervalWeeks
             || String(format: "%02d:%02d", hour, minute) != store.openTime
+    }
+
+    /// 周期の呼び方。1週は「毎週」、それより長いものは「2週ごと」のように言う。
+    static func intervalLabel(_ weeks: Int) -> String {
+        weeks <= 1 ? "毎週" : "\(weeks)週ごと"
     }
 }

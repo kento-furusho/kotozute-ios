@@ -36,7 +36,7 @@ struct InviteLandingView: View {
                     presence(of: preview.inviterDisplayName)
                         .padding(.top, 24)
                 } else {
-                    Text("ふたりで、いいなと思ったことを書きためる。\n週に一度まとめて読む。")
+                    Text("ふたりで、いいなと思ったことを書きためる。\n決めたペースでまとめて読む。")
                         .font(Theme.font(15))
                         .foregroundStyle(Theme.inkSoft)
                         .multilineTextAlignment(.center)

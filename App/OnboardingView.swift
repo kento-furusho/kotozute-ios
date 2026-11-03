@@ -26,7 +26,7 @@ struct OnboardingView: View {
                 intro.tag(0)
                 concept(
                     art: { WeekStrip() },
-                    title: "週に一度のオープン",
+                    title: "ふたりのペースでオープン",
                     body: "たまったころに、ふりかえる。\nお互いに書かないと、見れないよ。"
                 ).tag(1)
             }
