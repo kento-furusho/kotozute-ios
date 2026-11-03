@@ -52,7 +52,7 @@ struct SettingsView: View {
                     .font(Theme.font(18, weight: .bold))
                     .foregroundStyle(Theme.ink)
 
-                Text("この日に、ふたりのことづてがまとまります。")
+                Text("この日に、ふたりのことづてがオープンします。")
                     .font(Theme.font(14))
                     .foregroundStyle(Theme.inkSoft)
                     .padding(.top, 6)
