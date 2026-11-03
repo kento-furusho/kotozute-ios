@@ -27,6 +27,9 @@ struct MainTabView: View {
     }
 
     @State private var selection: Tab = .read
+    /// ペースを決める画面を出し終えたペア（カンマ区切り）。ペアごとに1度だけ出す。
+    @AppStorage("firstScheduleSeenPairs") private var firstScheduleSeenPairs = ""
+    @State private var showsFirstSchedule = false
     /// 通知の許可と端末トークン。ここに来た＝ペアが成立している時点で尋ねる。
     private var push: PushStore { PushStore.shared }
 
@@ -70,6 +73,33 @@ struct MainTabView: View {
         .onChange(of: push.deviceToken) { _, token in
             Task { await store.syncPushToken(token) }
         }
+        // ペアを組んだ直後に、オープンのペースを決めてもらう。
+        // ペアの情報は読み込みが済んでから入るので、変わるたびに確かめる。
+        .onAppear { checkFirstSchedule() }
+        .onChange(of: store.pairID) { _, _ in checkFirstSchedule() }
+        .onChange(of: store.cycleStarts) { _, _ in checkFirstSchedule() }
+        .fullScreenCover(isPresented: $showsFirstSchedule) {
+            FirstScheduleView(store: store) {
+                markFirstScheduleSeen()
+                showsFirstSchedule = false
+            }
+        }
+    }
+
+    /// まだ一度もオープンしていないペアで、この画面をまだ出していなければ出す。
+    /// 前から使っているペアには出さない（アップデートのたびに出ると邪魔になる）。
+    private func checkFirstSchedule() {
+        let pairID = store.pairID
+        guard !pairID.isEmpty, store.hasNeverOpened else { return }
+        let seen = firstScheduleSeenPairs.split(separator: ",").map(String.init)
+        guard !seen.contains(pairID) else { return }
+        showsFirstSchedule = true
+    }
+
+    private func markFirstScheduleSeen() {
+        guard !store.pairID.isEmpty else { return }
+        let seen = firstScheduleSeenPairs.split(separator: ",").map(String.init)
+        firstScheduleSeenPairs = (seen + [store.pairID]).joined(separator: ",")
     }
 
     @ViewBuilder

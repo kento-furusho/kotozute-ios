@@ -215,7 +215,7 @@ struct InviteView: View {
                     .foregroundStyle(Theme.ink)
                     .padding(.top, 48)
 
-                Text("リンクを送れば、それだけではじまる。")
+                Text("リンクを送れば、それだけで始められます。")
                     .font(Theme.font(15))
                     .foregroundStyle(Theme.inkSoft)
                     .multilineTextAlignment(.center)
@@ -252,7 +252,7 @@ struct InviteView: View {
                         .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.line, lineWidth: 1))
                         .padding(.top, 6)
 
-                    Text("長押しでコピーできる。")
+                    Text("長押しでコピーできます。")
                         .font(Theme.font(12))
                         .foregroundStyle(Theme.inkSoft)
                         .padding(.top, 6)
@@ -263,7 +263,7 @@ struct InviteView: View {
 
                 // 待っているあいだも書ける（ことづては書いた人の下に貯まる）。
                 // 相手が来るまで何もできない、という時間にしない。
-                Text("相手を待つあいだも、ことづては書きためられる。")
+                Text("相手を待つあいだも、ことづては書きためられます。")
                     .font(Theme.font(13))
                     .foregroundStyle(Theme.inkSoft)
                     .multilineTextAlignment(.center)

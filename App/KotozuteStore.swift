@@ -24,6 +24,11 @@ final class KotozuteStore {
     /// 問い合わせのときに、どのアカウントの話かを伝えるのに使う。
     private(set) var myUserID = ""
     private(set) var partnerName = ""
+    private(set) var partnerUserID = ""
+    private(set) var pairID = ""
+    /// オープンのペースを最後に決めた人。ペアを組んだ直後の画面で、
+    /// 相手がもう決めていれば「◯◯が決めたペース」と見せる。
+    private(set) var scheduleSetBy: String?
     private(set) var timezone = TimeZone(identifier: "Asia/Tokyo") ?? .current
     /// オープンの曜日（0=日〜6=土）と時刻（"HH:MM"）。設定画面で変える。
     private(set) var openDayOfWeek = 5
@@ -93,6 +98,9 @@ final class KotozuteStore {
             // 2. 相手の名前とタイムゾーン。nextOpenAt の解釈にタイムゾーンが要る。
             let pair = try await client.pair()
             partnerName = pair.partner.displayName
+            partnerUserID = pair.partner.userId
+            pairID = pair.pairId
+            scheduleSetBy = pair.scheduleSetBy
             timezone = TimeZone(identifier: pair.timezone) ?? timezone
             openDayOfWeek = pair.openDayOfWeek
             openTime = pair.openTime
@@ -151,7 +159,7 @@ final class KotozuteStore {
     func updateDisplayName(_ name: String) async -> String? {
         guard let client else { return nil }
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return "なまえを入れてほしい。" }
+        guard !trimmed.isEmpty else { return "ニックネームを入力してください。" }
         guard trimmed != myName else { return nil }
         do {
             _ = try await client.updateMe(UpdateMeRequest(displayName: trimmed))
@@ -240,7 +248,7 @@ final class KotozuteStore {
         } catch APIError.conflict {
             acceptError = "この招待は使えません。\n期限が切れているか、すでに使われています。\n\n招待した方に、\n新しいリンクを送ってもらってください。"
         } catch APIError.badRequest {
-            acceptError = "自分の招待は受けられない。"
+            acceptError = "自分の招待は受けられません。"
         } catch {
             acceptError = Self.message(for: error)
         }
@@ -284,11 +292,16 @@ final class KotozuteStore {
             return nil
         } catch APIError.conflict {
             await load()
-            return "オープン済みのことづては書き直せない。"
+            return "オープン済みのことづては書き直せません。"
         } catch {
             return Self.message(for: error)
         }
     }
+
+    /// まだ一度もオープンしていないペアか。区切りは成立時の1つだけ（遠い過去）なので、
+    /// 2つ目が積まれていなければ未オープン。ペースを決める画面はこのあいだだけ出す
+    /// （前から使っている人に、アップデートのたびに出さないため）。
+    var hasNeverOpened: Bool { cycleStarts.count <= 1 }
 
     /// オープンの曜日・時刻・周期を変える。成功したら状態を取り直して次回オープン日を更新する。
     func updateSchedule(openDayOfWeek: Int, openTime: String, intervalWeeks: Int) async -> String? {
@@ -311,10 +324,10 @@ final class KotozuteStore {
     private static func message(for error: any Error) -> String {
         guard let error = error as? APIError else { return error.localizedDescription }
         return switch error {
-        case .unauthorized: "サインインし直してほしい。"
-        case .conflict: "いまはその操作ができない。"
-        case let .transport(message): "通信に失敗した。\(message)"
-        default: error.serverMessage ?? "うまくいかなかった。"
+        case .unauthorized: "サインインし直してください。"
+        case .conflict: "いまはその操作ができません。"
+        case let .transport(message): "通信に失敗しました。\(message)"
+        default: error.serverMessage ?? "うまくいきませんでした。"
         }
     }
 

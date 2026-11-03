@@ -40,7 +40,7 @@ struct AuthView: View {
                     .textContentType(isRegistering ? .newPassword : .password)
 
                 if isRegistering {
-                    Text("8文字以上。小文字と数字を含める。")
+                    Text("8文字以上で、小文字と数字を含めてください。")
                         .font(Theme.font(12))
                         .foregroundStyle(Theme.inkSoft)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -144,7 +144,7 @@ struct ConfirmView: View {
                 Text("確認コード")
                     .font(Theme.font(26, weight: .bold))
                     .foregroundStyle(Theme.ink)
-                Text("\(email) に届いたコードを入れてほしい。")
+                Text("\(email) に届いたコードを入力してください。")
                     .font(Theme.font(14))
                     .foregroundStyle(Theme.inkSoft)
                     .multilineTextAlignment(.center)

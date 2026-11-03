@@ -112,7 +112,7 @@ final class WallStore {
         } catch {
             mine = []
             partner = []
-            errorMessage = "読み込めなかった。"
+            errorMessage = "読み込めませんでした。"
         }
     }
 

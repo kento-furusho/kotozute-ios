@@ -36,7 +36,7 @@ struct InviteLandingView: View {
                     presence(of: preview.inviterDisplayName)
                         .padding(.top, 24)
                 } else {
-                    Text("ふたりで、いいなと思ったことを書きためる。\n決めたペースでまとめて読む。")
+                    Text("ふたりで、いいなと思ったことを書きためます。\n決めたペースでまとめて読みます。")
                         .font(Theme.font(15))
                         .foregroundStyle(Theme.inkSoft)
                         .multilineTextAlignment(.center)
@@ -84,12 +84,12 @@ struct InviteLandingView: View {
                 .shadow(color: Theme.ink.opacity(0.22), radius: 8, y: 6)
                 .rotationEffect(.degrees(-3))
 
-            Text("\(name)のことづてが、もう貼ってある。")
+            Text("\(name)のことづてが、もう貼ってあります。")
                 .font(Theme.font(15))
                 .foregroundStyle(Theme.ink)
                 .multilineTextAlignment(.center)
 
-            Text("じぶんが1枚書くと、見られる。")
+            Text("自分が1枚書くと、読めます。")
                 .font(Theme.font(14))
                 .foregroundStyle(Theme.inkSoft)
                 .multilineTextAlignment(.center)

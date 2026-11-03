@@ -157,6 +157,8 @@ public struct PairResponse: Decodable, Sendable {
     public let openTime: String
     /// オープンの周期（週）。1=毎週、2=2週ごと…。古いサーバーは返さないので、無ければ 1。
     public let openIntervalWeeks: Int
+    /// オープンのペースを最後に決めた人（ユーザーID）。誰も決めていなければ nil。
+    public let scheduleSetBy: String?
     /// IANA タイムゾーン名（例 Asia/Tokyo）。nextOpenAt の解釈にはこれを使う。
     public let timezone: String
     public let status: String
@@ -166,7 +168,7 @@ public struct PairResponse: Decodable, Sendable {
     public let cycleStarts: [Date]
 
     private enum CodingKeys: String, CodingKey {
-        case pairId, partner, openDayOfWeek, openTime, openIntervalWeeks, timezone, status, nextOpenAt, cycleStarts
+        case pairId, partner, openDayOfWeek, openTime, openIntervalWeeks, scheduleSetBy, timezone, status, nextOpenAt, cycleStarts
     }
 
     public init(from decoder: any Decoder) throws {
@@ -176,6 +178,7 @@ public struct PairResponse: Decodable, Sendable {
         openDayOfWeek = try c.decode(Int.self, forKey: .openDayOfWeek)
         openTime = try c.decode(String.self, forKey: .openTime)
         openIntervalWeeks = max(1, try c.decodeIfPresent(Int.self, forKey: .openIntervalWeeks) ?? 1)
+        scheduleSetBy = try c.decodeIfPresent(String.self, forKey: .scheduleSetBy)
         timezone = try c.decode(String.self, forKey: .timezone)
         status = try c.decode(String.self, forKey: .status)
         nextOpenAt = try WallClock.decodeOptional(from: c, forKey: .nextOpenAt)

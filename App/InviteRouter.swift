@@ -63,7 +63,7 @@ final class InviteRouter {
             // 存在しない場合も期限切れも 404。区別せずに伝える（サーバーも区別しない）。
             errorMessage = "この招待は使えません。\n期限が切れている可能性があります。\n\n招待した方に、\n新しいリンクを送ってもらってください。"
         } catch {
-            errorMessage = "招待を読み込めなかった。"
+            errorMessage = "招待を読み込めませんでした。"
         }
     }
 }

@@ -78,7 +78,7 @@ final class AuthStore {
     func confirm(email: String, code: String, password: String? = nil) async {
         await perform {
             guard let password = password ?? self.pendingPassword else {
-                throw AuthError.underlying(message: "パスワードを入れてほしい。")
+                throw AuthError.underlying(message: "パスワードを入力してください。")
             }
             try await self.authenticator.confirmSignUp(email: email, code: code)
             // コード入力の直後にもう一度パスワードを打たせない。
@@ -131,14 +131,14 @@ final class AuthStore {
 
     private static func message(for error: AuthError) -> String {
         switch error {
-        case .invalidCredentials: "メールアドレスかパスワードが違う。"
-        case .notConfirmed: "まだ確認が済んでいない。"
-        case .emailAlreadyExists: "このメールアドレスは登録済み。"
-        case .invalidCode: "確認コードが違う。"
-        case .codeExpired: "確認コードの期限が切れた。送り直してほしい。"
-        case .weakPassword: "パスワードは8文字以上で、小文字と数字を含める。"
-        case .notSignedIn, .sessionExpired: "もう一度サインインしてほしい。"
-        case .keychain: "端末への保存に失敗した。"
+        case .invalidCredentials: "メールアドレスかパスワードが違います。"
+        case .notConfirmed: "まだ確認が済んでいません。"
+        case .emailAlreadyExists: "このメールアドレスは登録済みです。"
+        case .invalidCode: "確認コードが違います。"
+        case .codeExpired: "確認コードの期限が切れました。送り直してください。"
+        case .weakPassword: "パスワードは8文字以上で、小文字と数字を含めてください。"
+        case .notSignedIn, .sessionExpired: "もう一度サインインしてください。"
+        case .keychain: "端末への保存に失敗しました。"
         case let .underlying(message): message
         }
     }

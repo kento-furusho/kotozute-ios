@@ -92,7 +92,7 @@ final class CalendarStore {
             days = group(mine: try await mineItems, partner: try await partnerItems)
         } catch {
             days = [:]
-            errorMessage = "読み込めなかった。"
+            errorMessage = "読み込めませんでした。"
         }
     }
 

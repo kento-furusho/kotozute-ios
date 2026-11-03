@@ -139,7 +139,7 @@ struct BlurredNotes: View {
         // ぼかすと縁が滲むので、少しだけ内側に置いて紙の形を保つ。
         .padding(.vertical, 4)
         .accessibilityElement()
-        .accessibilityLabel("相手のことづてが\(count)件。まだ読めない")
+        .accessibilityLabel("相手のことづてが\(count)件。まだ読めません")
     }
 
     /// 傾きと帯の並びは位置から決める。再描画でぶれないように。

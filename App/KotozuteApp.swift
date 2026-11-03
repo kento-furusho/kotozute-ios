@@ -87,6 +87,9 @@ struct KotozuteApp: App {
                     router: InviteRouter()
                 )
             )
+        // ペアを組んだ直後の「オープンのペース」。通信しないので、選ぶ側の見た目だけ確かめられる。
+        case "first-schedule":
+            return AnyView(FirstScheduleView(store: KotozuteStore(client: nil)) {})
         // 招待される側の入口。--invite <token> と併せて使う。
         case "invite-landing":
             let router = InviteRouter()
@@ -125,7 +128,7 @@ struct KotozuteApp: App {
                 do {
                     auth = try AuthStore()
                 } catch {
-                    setupError = "認証の準備に失敗した。\(error.localizedDescription)"
+                    setupError = "認証の準備に失敗しました。\(error.localizedDescription)"
                 }
             }
         }
