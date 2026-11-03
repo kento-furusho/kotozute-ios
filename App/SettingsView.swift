@@ -30,7 +30,6 @@ struct SettingsView: View {
     @State private var isEditingName = false
     @State private var isEditingSchedule = false
 
-    private static let weekdays = ["日", "月", "火", "水", "木", "金", "土"]
 
     var body: some View {
         ScrollView {
@@ -59,51 +58,24 @@ struct SettingsView: View {
                     .padding(.top, 6)
 
                 if !isEditingSchedule {
-                    settingRow(value: "\(Self.intervalLabel(store.openIntervalWeeks)) \(Self.weekdays[store.openDayOfWeek])曜 \(store.openTime)") {
+                    settingRow(value: SchedulePicker.summary(
+                        intervalWeeks: store.openIntervalWeeks,
+                        dayOfWeek: store.openDayOfWeek,
+                        time: store.openTime
+                    )) {
                         withAnimation(.easeInOut(duration: 0.18)) { isEditingSchedule = true }
                     }
                 }
 
                 if isEditingSchedule {
                     VStack(alignment: .leading, spacing: 0) {
-                    // 周期は週単位。何週ごとに開くか。
-                    Picker("周期", selection: $intervalWeeks) {
-                        ForEach(1...4, id: \.self) { weeks in
-                            Text(Self.intervalLabel(weeks)).tag(weeks)
-                        }
-                    }
-                    .pickerStyle(.segmented)
+                    SchedulePicker(
+                        intervalWeeks: $intervalWeeks,
+                        dayOfWeek: $dayOfWeek,
+                        hour: $hour,
+                        minute: $minute
+                    )
                     .padding(.top, 18)
-
-                    Picker("曜日", selection: $dayOfWeek) {
-                        ForEach(0..<7, id: \.self) { index in
-                            Text(Self.weekdays[index]).tag(index)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.top, 10)
-
-                    HStack(spacing: 0) {
-                        Picker("時", selection: $hour) {
-                            ForEach(0..<24, id: \.self) { Text(String(format: "%02d", $0)).tag($0) }
-                        }
-                        .pickerStyle(.wheel)
-                        .frame(maxWidth: .infinity)
-
-                        Text(":")
-                            .font(Theme.font(20, weight: .bold))
-                            .foregroundStyle(Theme.ink)
-
-                        Picker("分", selection: $minute) {
-                            // 5分刻み。細かく刻む必要のある設定ではない。
-                            ForEach(Array(stride(from: 0, to: 60, by: 5)), id: \.self) {
-                                Text(String(format: "%02d", $0)).tag($0)
-                            }
-                        }
-                        .pickerStyle(.wheel)
-                        .frame(maxWidth: .infinity)
-                    }
-                    .frame(height: 130)
 
                     if let message {
                         Text(message)
@@ -388,10 +360,5 @@ struct SettingsView: View {
         dayOfWeek != store.openDayOfWeek
             || intervalWeeks != store.openIntervalWeeks
             || String(format: "%02d:%02d", hour, minute) != store.openTime
-    }
-
-    /// 周期の呼び方。1週は「毎週」、それより長いものは「2週ごと」のように言う。
-    static func intervalLabel(_ weeks: Int) -> String {
-        weeks <= 1 ? "毎週" : "\(weeks)週ごと"
     }
 }

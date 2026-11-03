@@ -24,6 +24,11 @@ final class KotozuteStore {
     /// 問い合わせのときに、どのアカウントの話かを伝えるのに使う。
     private(set) var myUserID = ""
     private(set) var partnerName = ""
+    private(set) var partnerUserID = ""
+    private(set) var pairID = ""
+    /// オープンのペースを最後に決めた人。ペアを組んだ直後の画面で、
+    /// 相手がもう決めていれば「◯◯が決めたペース」と見せる。
+    private(set) var scheduleSetBy: String?
     private(set) var timezone = TimeZone(identifier: "Asia/Tokyo") ?? .current
     /// オープンの曜日（0=日〜6=土）と時刻（"HH:MM"）。設定画面で変える。
     private(set) var openDayOfWeek = 5
@@ -93,6 +98,9 @@ final class KotozuteStore {
             // 2. 相手の名前とタイムゾーン。nextOpenAt の解釈にタイムゾーンが要る。
             let pair = try await client.pair()
             partnerName = pair.partner.displayName
+            partnerUserID = pair.partner.userId
+            pairID = pair.pairId
+            scheduleSetBy = pair.scheduleSetBy
             timezone = TimeZone(identifier: pair.timezone) ?? timezone
             openDayOfWeek = pair.openDayOfWeek
             openTime = pair.openTime
@@ -289,6 +297,11 @@ final class KotozuteStore {
             return Self.message(for: error)
         }
     }
+
+    /// まだ一度もオープンしていないペアか。区切りは成立時の1つだけ（遠い過去）なので、
+    /// 2つ目が積まれていなければ未オープン。ペースを決める画面はこのあいだだけ出す
+    /// （前から使っている人に、アップデートのたびに出さないため）。
+    var hasNeverOpened: Bool { cycleStarts.count <= 1 }
 
     /// オープンの曜日・時刻・周期を変える。成功したら状態を取り直して次回オープン日を更新する。
     func updateSchedule(openDayOfWeek: Int, openTime: String, intervalWeeks: Int) async -> String? {
