@@ -128,27 +128,29 @@ struct SettingsView: View {
                     .font(Theme.font(18, weight: .bold))
                     .foregroundStyle(Theme.ink)
 
+                // ニックネームと同じ枠で見せる。変えるものではないので「変更する」は付けない。
                 HStack {
                     Text(store.partnerName.isEmpty ? "—" : store.partnerName)
-                        .font(Theme.font(15))
+                        .font(Theme.font(17))
                         .foregroundStyle(Theme.ink)
                     Spacer()
                 }
-                .padding(.vertical, 12)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 14)
+                .background(.white.opacity(0.7))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.line, lineWidth: 1))
+                .padding(.top, 16)
 
                 // ペア未成立でもホームに入れるようになったので、
                 // ここから招待画面へ戻れないと行き止まりになる。
+                // 解消のほうは、取り返しがつかないので画面のいちばん下（アカウントの削除の隣）に置く。
+                // 相手の名前のすぐ下にあると、ペアの欄でいちばん目立ってしまう。
                 if store.partnerName.isEmpty {
                     Button("ペアを組む") { onInvite() }
                         .font(Theme.font(15))
                         .foregroundStyle(Theme.accent)
-                } else {
-                    Button(isDissolving ? "解消中…" : "ペアを解消する") {
-                        showsDissolveConfirm = true
-                    }
-                    .font(Theme.font(15))
-                    .foregroundStyle(Theme.inkSoft)
-                    .disabled(isDissolving)
+                        .padding(.top, 14)
                 }
 
                 Divider().padding(.vertical, 28)
@@ -196,13 +198,24 @@ struct SettingsView: View {
                 .foregroundStyle(Theme.accent)
                 .padding(.top, 14)
 
-                // 取り返しがつかないので、いちばん下に置いて確認を挟む。
+                // ここから下は取り返しがつかない操作。いちばん下に寄せ、
+                // 小さく薄くして、確認を挟む。
+                if !store.partnerName.isEmpty {
+                    Button(isDissolving ? "解消中…" : "ペアを解消する") {
+                        showsDissolveConfirm = true
+                    }
+                    .font(Theme.font(14))
+                    .foregroundStyle(Theme.inkSoft)
+                    .padding(.top, 36)
+                    .disabled(isDissolving)
+                }
+
                 Button(isDeleting ? "削除中…" : "アカウントを削除") {
                     showsDeleteConfirm = true
                 }
-                .font(Theme.font(15))
+                .font(Theme.font(14))
                 .foregroundStyle(Theme.inkSoft)
-                .padding(.top, 22)
+                .padding(.top, store.partnerName.isEmpty ? 36 : 14)
                 .disabled(isDeleting)
             }
             .padding(20)
