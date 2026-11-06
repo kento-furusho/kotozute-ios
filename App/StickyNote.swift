@@ -51,7 +51,9 @@ struct StickyNote: View {
         formatter.calendar = Calendar(identifier: .gregorian)
         // 時刻まで出す。同じ日に何枚か書いた週に、どれが先か分かるようにする。
         // 端末のタイムゾーンで出す（読んでいる人の時計に合わせる）。
-        formatter.dateFormat = "M月d日 H:mm"
+        // 曜日も1文字添える。「あの週の何曜日だったか」で思い出せるように。
+        // 括弧は半角（次のオープンの表示 OpenSchedule とそろえる。付箋は幅が狭い）。
+        formatter.dateFormat = "M月d日(E) H:mm"
         return formatter
     }()
 }
