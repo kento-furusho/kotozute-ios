@@ -63,6 +63,23 @@ final class RequestBuildingTests: XCTestCase {
         XCTAssertNil(json["apnsToken"])
     }
 
+    /// ご意見は POST /feedback に本文と版を載せる。返りは 204（中身なし）。
+    func testSendFeedbackPostsBodyAndVersion() async throws {
+        let transport = StubTransport(statusCode: 204, json: "")
+        try await KotozuteClient.stubbed(transport: transport)
+            .sendFeedback(FeedbackRequest(body: "色を増やしてほしいです", appVersion: "1.0.3 (13)"))
+
+        let request = try XCTUnwrap(transport.lastRequest)
+        let body = try XCTUnwrap(request.httpBody)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+
+        XCTAssertEqual(request.httpMethod, "POST")
+        XCTAssertEqual(request.url?.path, "/Prod/feedback")
+        XCTAssertNotNil(request.value(forHTTPHeaderField: "Authorization"))
+        XCTAssertEqual(json["body"] as? String, "色を増やしてほしいです")
+        XCTAssertEqual(json["appVersion"] as? String, "1.0.3 (13)")
+    }
+
     // MARK: - エラー変換
 
     /// トークン無し/失効は 401。サインインに戻す判断に使う。

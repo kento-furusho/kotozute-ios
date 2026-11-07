@@ -170,6 +170,30 @@ final class KotozuteStore {
         }
     }
 
+    /// ご意見を送る。失敗したら画面に出す文を返す（成功は nil）。
+    ///
+    /// 版も一緒に送る。どの版で出た意見かが分かると、直したかどうかを判断しやすい。
+    func sendFeedback(_ text: String) async -> String? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "ご意見を入力してください。" }
+        guard trimmed.count <= FeedbackRequest.maxLength else {
+            return "\(FeedbackRequest.maxLength)字以内で入力してください。"
+        }
+        // 通信しないモード（スクリーンショット用）では送ったことにする。
+        guard let client else { return nil }
+        do {
+            try await client.sendFeedback(FeedbackRequest(body: trimmed, appVersion: Config.appVersion))
+            return nil
+        } catch APIError.transport {
+            return "送信できませんでした。電波のよいところで、もう一度お試しください。"
+        } catch {
+            // 共通の文（message(for:)）は使わない。API Gateway は存在しない窓口にも
+            // 403 を返し、それが「サインインし直してください」になる。
+            // アプリが新しくサーバーが古いときに、サインインし直しても直らない案内が出てしまう。
+            return "送信できませんでした。時間をおいて、もう一度お試しください。"
+        }
+    }
+
     /// ペアを解消する。成功したら true。
     ///
     /// アカウントもことづても残る。相手はペア未成立に戻る。

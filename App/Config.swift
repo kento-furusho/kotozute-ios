@@ -22,6 +22,13 @@ enum Config {
     /// App Store の直リンク。招待の文面に入れて、相手がアプリを入手できるようにする。
     static let appStoreURL = URL(string: "https://apps.apple.com/jp/app/id6807755962")!
 
+    /// "1.0.3 (13)" の形の版。ご意見に添えて送る。
+    static var appVersion: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+        return "\(version) (\(build))"
+    }
+
     /// 問題を報告するためのメール。
     ///
     /// App Store のガイドライン 1.2 は、ユーザーが書いたものを他のユーザーに
