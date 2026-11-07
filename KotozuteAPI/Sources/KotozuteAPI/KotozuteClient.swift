@@ -103,6 +103,13 @@ public struct KotozuteClient: Sendable {
         try await sendNoContent(.delete, "/me")
     }
 
+    // MARK: - ご意見
+
+    /// ご意見を送る。返るものは無い（204）。
+    public func sendFeedback(_ body: FeedbackRequest) async throws {
+        try await sendNoContent(.post, "/feedback", body: body)
+    }
+
     // MARK: - 招待
 
     public func createInvite() async throws -> CreateInviteResponse {
@@ -218,6 +225,10 @@ public struct KotozuteClient: Sendable {
     /// 中身を返さない呼び出し（204）。デコードしないぶんだけ分けている。
     private func sendNoContent(_ method: Method, _ path: String) async throws {
         _ = try await perform(method, path, body: Optional<EmptyBody>.none, query: [], authenticated: true)
+    }
+
+    private func sendNoContent<Body: Encodable>(_ method: Method, _ path: String, body: Body) async throws {
+        _ = try await perform(method, path, body: body, query: [], authenticated: true)
     }
 
     private func send<Response: Decodable>(

@@ -377,3 +377,21 @@ public struct ArchiveResponse: Decodable, Sendable {
     /// 次ページのカーソル。中身は不透明なので解釈せず、そのまま次のリクエストに渡す。nil なら終端。
     public let nextCursor: String?
 }
+
+// MARK: - ご意見
+
+/// POST /feedback。送った人はトークンからサーバーが決める。
+public struct FeedbackRequest: Encodable, Sendable {
+    /// 本文。サーバーは前後の空白を落とし、2000字まで受け付ける。
+    public let body: String
+    /// "1.0.3 (13)" のような版。どの版での意見かを残す。
+    public let appVersion: String?
+
+    public init(body: String, appVersion: String? = nil) {
+        self.body = body
+        self.appVersion = appVersion
+    }
+
+    /// サーバーが受け付ける本文の上限（文字数）。
+    public static let maxLength = 2000
+}

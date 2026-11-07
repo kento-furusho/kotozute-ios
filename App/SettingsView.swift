@@ -29,6 +29,7 @@ struct SettingsView: View {
     /// 入力欄をいきなり置くと、見に来ただけで触ってしまう。
     @State private var isEditingName = false
     @State private var isEditingSchedule = false
+    @State private var showsFeedback = false
 
 
     var body: some View {
@@ -176,6 +177,13 @@ struct SettingsView: View {
                     .foregroundStyle(Theme.accent)
                     .padding(.top, 12)
 
+                // 感想や要望。アプリ内で送る（送った人と版はサーバーで付く）。
+                // 下の「問題を報告する」とは分ける。意見のつもりの人には「報告」は押しにくい。
+                Button("ご意見・ご要望") { showsFeedback = true }
+                    .font(Theme.font(15))
+                    .foregroundStyle(Theme.accent)
+                    .padding(.top, 12)
+
                 // 不適切な内容を報告する手段。App Store のガイドライン 1.2 が
                 // ユーザーの書いたものを見せるアプリに求めている。
                 Link("問題を報告する", destination: Config.reportMailURL(userID: store.myUserID))
@@ -223,6 +231,9 @@ struct SettingsView: View {
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("設定")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showsFeedback) {
+            FeedbackView(store: store)
+        }
         // ことづては消えない。消えるのは関係のほうだと分かるように書く。
         .alert("サインアウトする", isPresented: $showsSignOutConfirm) {
             Button("サインアウト") {
