@@ -129,19 +129,12 @@ struct SettingsView: View {
                     .font(Theme.font(18, weight: .bold))
                     .foregroundStyle(Theme.ink)
 
-                // ニックネームと同じ枠で見せる。変えるものではないので「変更する」は付けない。
-                HStack {
-                    Text(store.partnerName.isEmpty ? "—" : store.partnerName)
-                        .font(Theme.font(17))
-                        .foregroundStyle(Theme.ink)
-                    Spacer()
-                }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 14)
-                .background(.white.opacity(0.7))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.line, lineWidth: 1))
-                .padding(.top, 16)
+                // 名前を出すだけ。ここで変えられるものはないので、入力欄のような枠は付けない
+                // （枠があると押せそう・書き換えられそうに見える）。
+                Text(store.partnerName.isEmpty ? "—" : store.partnerName)
+                    .font(Theme.font(17))
+                    .foregroundStyle(Theme.ink)
+                    .padding(.top, 12)
 
                 // ペア未成立でもホームに入れるようになったので、
                 // ここから招待画面へ戻れないと行き止まりになる。
@@ -153,6 +146,32 @@ struct SettingsView: View {
                         .foregroundStyle(Theme.accent)
                         .padding(.top, 14)
                 }
+
+                Divider().padding(.vertical, 28)
+
+                // 感想や要望。リンクの列に混ぜると見落とされるので、見出しと説明を付けて独立させる。
+                // アプリ内で送る（送った人と版はサーバーで付く）。
+                // 下の「問題を報告する」とは分ける。意見のつもりの人には「報告」は押しにくい。
+                Text("ご意見・ご要望")
+                    .font(Theme.font(18, weight: .bold))
+                    .foregroundStyle(Theme.ink)
+
+                Text("使ってみての感想や、ほしい機能をお聞かせください。")
+                    .font(Theme.font(14))
+                    .foregroundStyle(Theme.inkSoft)
+                    .padding(.top, 6)
+
+                Button {
+                    showsFeedback = true
+                } label: {
+                    Label("ご意見を送る", systemImage: "envelope")
+                        .font(Theme.font(15, weight: .bold))
+                        .foregroundStyle(Theme.accent)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 13)
+                        .overlay(Capsule().stroke(Theme.accent, lineWidth: 1.5))
+                }
+                .padding(.top, 14)
 
                 Divider().padding(.vertical, 28)
 
@@ -173,13 +192,6 @@ struct SettingsView: View {
                     .padding(.top, 12)
 
                 Link("サポート", destination: Config.supportURL)
-                    .font(Theme.font(15))
-                    .foregroundStyle(Theme.accent)
-                    .padding(.top, 12)
-
-                // 感想や要望。アプリ内で送る（送った人と版はサーバーで付く）。
-                // 下の「問題を報告する」とは分ける。意見のつもりの人には「報告」は押しにくい。
-                Button("ご意見・ご要望") { showsFeedback = true }
                     .font(Theme.font(15))
                     .foregroundStyle(Theme.accent)
                     .padding(.top, 12)
