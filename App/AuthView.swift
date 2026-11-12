@@ -1,8 +1,12 @@
+import AuthenticationServices
+import KotozuteAuth
 import SwiftUI
 
 /// サインイン／新規登録。登録はメールとパスワードだけで、表示名は後で聞く。
+/// Apple / Google でも入れる（登録とログインで同じボタン。初めてならそのまま登録になる）。
 struct AuthView: View {
     @Bindable var auth: AuthStore
+    @Environment(\.webAuthenticationSession) private var webAuthenticationSession
 
     @State private var isRegistering: Bool
     @State private var email = ""
@@ -59,6 +63,9 @@ struct AuthView: View {
             primaryButton
                 .padding(.top, 24)
 
+            externalSignIn
+                .padding(.top, 20)
+
             Button(isRegistering ? "アカウントを持っている" : "はじめて使う") {
                 isRegistering.toggle()
                 auth.clearError()
@@ -107,6 +114,58 @@ struct AuthView: View {
             .clipShape(Capsule())
         }
         .disabled(!canSubmit)
+    }
+
+    /// Apple / Google のボタン。文言は Apple の指針にある「〜で続ける」にそろえる。
+    /// 登録とログインを分けないのは、初めてかどうかを本人が気にしなくて済むように。
+    private var externalSignIn: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                Rectangle().fill(Theme.line).frame(height: 1)
+                Text("または")
+                    .font(Theme.font(13))
+                    .foregroundStyle(Theme.inkSoft)
+                Rectangle().fill(Theme.line).frame(height: 1)
+            }
+
+            externalButton(.apple) {
+                Label("Appleで続ける", systemImage: "apple.logo")
+                    .foregroundStyle(.white)
+            }
+            .background(.black)
+            .clipShape(Capsule())
+
+            externalButton(.google) {
+                Text("Googleで続ける")
+                    .foregroundStyle(Theme.ink)
+            }
+            .background(.white)
+            .clipShape(Capsule())
+            .overlay(Capsule().stroke(Theme.line, lineWidth: 1))
+        }
+    }
+
+    private func externalButton(_ provider: ExternalProvider, @ViewBuilder label: () -> some View) -> some View {
+        Button {
+            Task {
+                await auth.signIn(with: provider) { url, scheme in
+                    // ephemeral：Safari のログイン状態を持ち込まない・残さない。
+                    // 端末を共有していても前の人のアカウントで勝手に入らず、
+                    // 「"ことづて"がサインインのために…を使用しようとしています」の確認も出ない。
+                    try await webAuthenticationSession.authenticate(
+                        using: url,
+                        callbackURLScheme: scheme,
+                        preferredBrowserSession: .ephemeral
+                    )
+                }
+            }
+        } label: {
+            label()
+                .font(Theme.font(16, weight: .bold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 15)
+        }
+        .disabled(auth.isWorking)
     }
 
     private func field(_ placeholder: String, text: Binding<String>) -> some View {

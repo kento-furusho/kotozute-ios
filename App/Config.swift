@@ -10,6 +10,11 @@ enum Config {
     static let userPoolClientId = "1hbuhnvdap6ah8e9tcs5elnuq"
     static let region = "ap-northeast-1"
 
+    /// Apple / Google ログインの入口（Cognito のドメイン）と、ログイン後にアプリへ戻る先。
+    /// 戻り先は template.yaml のアプリクライアントの CallbackURLs と一致させる。
+    static let authDomain = "kotozute.auth.ap-northeast-1.amazoncognito.com"
+    static let authRedirectURI = "kotozute://auth/callback"
+
     /// 規約とプライバシーポリシーの公開先。kotozute リポジトリの web/ を配信している。
     /// App Store の審査では、アプリ内からここへ辿れることを見られる。
     ///
