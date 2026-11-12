@@ -19,7 +19,7 @@ struct KotozuteApp: App {
     /// 引数なしの通常起動でも `if let` が成立して真っ白な画面になる。
     /// AnyView で受けて、返さないときは明示的に nil を返す。
     ///
-    ///   xcrun simctl launch <udid> dev.kotozute.app --screen welcome|concept|auth|signin|viewing|reveal|detail|invite|invite-landing
+    ///   xcrun simctl launch <udid> dev.kotozute.app --screen welcome|concept|auth|signin|viewing|reveal|detail|invite|invite-landing|profile|first-kotozute
     private static var previewScreen: AnyView? {
         #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
@@ -84,9 +84,15 @@ struct KotozuteApp: App {
                 InviteView(
                     store: KotozuteStore(client: nil),
                     auth: auth,
-                    router: InviteRouter()
+                    router: InviteRouter(),
+                    showsSteps: true
                 )
             )
+        // 登録直後の3枚のうち前の2枚（ニックネーム → 最初のことづて）。実際には新しいアカウントを作らないと出ない。
+        case "profile":
+            return AnyView(ProfileSetupView(store: KotozuteStore(client: nil)))
+        case "first-kotozute":
+            return AnyView(FirstKotozuteView(store: KotozuteStore(client: nil)) {})
         // ペアを組んだ直後の「オープンのペース」。通信しないので、選ぶ側の見た目だけ確かめられる。
         case "first-schedule":
             return AnyView(FirstScheduleView(store: KotozuteStore(client: nil)) {})
