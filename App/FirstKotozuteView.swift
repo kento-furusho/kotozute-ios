@@ -82,7 +82,8 @@ struct FirstKotozuteView: View {
                 .disabled(!canSave || isSaving)
                 .padding(.top, 32)
 
-                Button("あとで", action: onDone)
+                // 何をあとにするのかを言葉にする。「あとで」だけだと、飛ばすと書けなくなるように読める。
+                Button("あとで書く", action: onDone)
                     .font(Theme.font(14))
                     .foregroundStyle(Theme.inkSoft)
                     .padding(.top, 16)

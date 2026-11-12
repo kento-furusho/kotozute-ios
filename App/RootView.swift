@@ -256,6 +256,7 @@ struct ProfileSetupView: View {
 /// ほかは控えめにした。「ことづてを書く」は、直前の画面で書いたばかりなので外した
 /// （ホームからいつでも書ける）。招待コードは長い英数字なので、ふだんは畳んでおく
 /// （「リンクを送る」の文面にコードは入っている）。
+/// 1枚目を「あとで書く」で飛ばした人には、付箋の代わりに「ことづてを書く」を出す。
 struct InviteView: View {
     @Bindable var store: KotozuteStore
     @Bindable var auth: AuthStore
@@ -267,6 +268,7 @@ struct InviteView: View {
     @State private var enteredCode = ""
     @State private var showsCodeEntry = false
     @State private var showsMyCode = false
+    @State private var isWriting = false
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -343,6 +345,9 @@ struct InviteView: View {
         // 開くたび・アプリに戻るたびに確かめる。何日も開きっぱなしにしていると、
         // 期限の切れたリンクを送ってしまう。
         .task { await store.ensureFreshInvite() }
+        .sheet(isPresented: $isWriting) {
+            WriteView { body, color in Task { await store.write(body, color: color) } }
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await store.ensureFreshInvite() } }
         }
@@ -427,6 +432,16 @@ struct InviteView: View {
                 StickyNote(kotozute: first, paper: first.color.flatMap(Theme.stickyPaper(hex:)) ?? Theme.stickyPaper(at: 0), tilt: -2)
                     .frame(width: 208)
             }
+            .padding(.top, 28)
+        } else {
+            // 前の画面で「あとで書く」を選んだ人。書く入口をここにも残す
+            // （まだ1枚も無いので、相手を誘う前に書いておけるように）。
+            Button {
+                isWriting = true
+            } label: {
+                Label("ことづてを書く", systemImage: "square.and.pencil")
+            }
+            .buttonStyle(OutlineButtonStyle())
             .padding(.top, 28)
         }
     }
