@@ -4,11 +4,18 @@ import UIKit
 /// 色と書体。docs/design/ の付箋デザイン案から拾っている。
 /// トーンは明るい・軽い（ポップ寄り）。
 enum Theme {
-    static let background = Color(hex: 0xF7F2E9)
-    static let ink = Color(hex: 0x3A322C)
-    static let inkSoft = Color(hex: 0x8A7B6C)
-    static let accent = Color(hex: 0xE4573D)
-    static let line = Color(hex: 0xE7DDCD)
+    // 配色（2026-11）。以前は生成り（F7F2E9）×テラコッタ（E4573D）×茶の文字で、
+    // Claude の配色に近く見えた。明るさとオレンジは残し、
+    // 土台をほんのり温かい白に、文字を茶からほぼ黒に、オレンジを黄色寄りの鮮やかな色にした。
+    // 説明文（inkSoft）は土台に対して 4.9:1。オレンジのボタンの白文字は 3.2:1 なので、
+    // オレンジの上には大きい太字（17pt bold）だけを置く。
+    static let background = Color(hex: 0xFFFCF8)
+    static let ink = Color(hex: 0x2A2522)
+    static let inkSoft = Color(hex: 0x756D66)
+    static let accent = Color(hex: 0xEF6420)
+    static let line = Color(hex: 0xF1E7DC)
+    /// タブバーなど、土台より一段明るい面。
+    static let surface = Color.white
 
     /// 付箋の色。デザイン案は単色ではなく、上が明るく下が濃いグラデーション。
     /// 紙が光を受けている感じが出て、平坦な矩形に見えなくなる。
