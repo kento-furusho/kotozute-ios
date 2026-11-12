@@ -1,4 +1,5 @@
 import KotozuteAPI
+import StoreKit
 import SwiftUI
 
 /// 「見る」タブ。壁を週ごとにたどる。
@@ -41,6 +42,9 @@ struct ViewingView: View {
 
     @State private var fullScreen: FullScreen?
     @AppStorage("seenRevealKey") private var seenRevealKey = ""
+    /// オープンから「1枚ずつ読む」へ進んだ。読む画面を閉じたらレビュー依頼を考える。
+    @State private var readFromReveal = false
+    @Environment(\.requestReview) private var requestReview
 
     var body: some View {
         NavigationStack {
@@ -82,7 +86,7 @@ struct ViewingView: View {
             .onAppear { syncWeeks() }
             .onChange(of: revealKey) { _, key in showRevealIfNeeded(key) }
             .onAppear { showRevealIfNeeded(revealKey) }
-            .fullScreenCover(item: $fullScreen) { screen in
+            .fullScreenCover(item: $fullScreen, onDismiss: askForReviewIfDue) { screen in
                 switch screen {
                 case let .reveal(wrapped):
                     RevealView(
@@ -90,7 +94,10 @@ struct ViewingView: View {
                         items: wrapped.items,
                         // 押して初めて「見た」と記録する。開かずに閉じた人には次にまた出す。
                         onOpened: { seenRevealKey = wrapped.items.first?.id ?? "" },
-                        onRead: { fullScreen = .detail(partnerDetail(wrapped.items)) }
+                        onRead: {
+                            readFromReveal = true
+                            fullScreen = .detail(partnerDetail(wrapped.items))
+                        }
                     )
                 case let .detail(detail):
                     KotozuteDetailView(detail: detail)
@@ -401,6 +408,22 @@ struct ViewingView: View {
         Kotozute(id: "sample-3", body: "洗い物、いつのまにか終わってた", createdAt: Date()),
     ]
     #endif
+
+    /// オープンして相手のことづてを読み終えたとき（読む画面を閉じた直後）だけ、
+    /// 月に一度までレビューを頼む。間隔の判定は `ReviewPrompt`。
+    ///
+    /// オープンの画面から読む画面へ切り替わるときにも onDismiss が来るので、
+    /// まだ何か出ているあいだは見送る。
+    private func askForReviewIfDue() {
+        guard readFromReveal, fullScreen == nil else { return }
+        readFromReveal = false
+        guard ReviewPrompt.claimIfDue() else { return }
+        Task {
+            // 閉じる動きが終わってから出す。重なると読みにくい。
+            try? await Task.sleep(for: .milliseconds(600))
+            requestReview()
+        }
+    }
 
     private func showRevealIfNeeded(_ key: String) {
         guard !key.isEmpty, key != seenRevealKey else { return }
