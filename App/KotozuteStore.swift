@@ -237,7 +237,15 @@ final class KotozuteStore {
     }
 
     func createInvite() async {
-        guard let client else { return }
+        guard let client else {
+            // 通信しないモード（画面の確認用）。ここで止めると招待画面が読み込み中のまま終わる。
+            #if DEBUG
+            inviteToken = "00000000-demo-0000-0000-000000000000"
+            inviteExpiresAt = Date().addingTimeInterval(7 * 86_400)
+            inviteOwner = myUserID
+            #endif
+            return
+        }
         do {
             let invite = try await client.createInvite()
             inviteToken = invite.token
