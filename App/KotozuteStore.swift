@@ -216,7 +216,23 @@ final class KotozuteStore {
     func deleteAccount() async -> Bool {
         guard let client else { return false }
         do {
-            try await client.deleteMe()
+            do {
+                try await client.deleteMe()
+            } catch APIError.conflict(let message) where message == DeleteMeRequest.appleReauthRequired {
+                // Apple で入れる人。サーバーはまだ何も消していない。
+                // Apple の本人確認を出し、連携の取り消しに使う code を付けて呼び直す。
+                switch await AppleReauth().run() {
+                case .code(let code):
+                    try await client.deleteMe(DeleteMeRequest(appleAuthorizationCode: code))
+                case .cancelled:
+                    // 閉じた＝やめた。何も消えていないので、そのまま戻す。
+                    return false
+                case .failed:
+                    // Apple ID に入れない等。消したいという意思のほうを優先し、取り消しなしで消す
+                    // （連携は「設定 > Apple ID > Apple でサインイン」から本人が外せる）。
+                    try await client.deleteMe(DeleteMeRequest(skipAppleRevoke: true))
+                }
+            }
             // 端末の登録はサーバーが消している。覚えだけ捨てて、次のアカウントで送り直す。
             sentPushTokenKey = nil
             return true

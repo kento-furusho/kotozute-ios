@@ -80,6 +80,36 @@ final class RequestBuildingTests: XCTestCase {
         XCTAssertEqual(json["appVersion"] as? String, "1.0.3 (13)")
     }
 
+    /// アカウント削除は DELETE /me。ふだんは空の本文、Apple の本人確認後は code を載せる。
+    func testDeleteMeSendsAppleCodeOnlyWhenGiven() async throws {
+        let transport = StubTransport(statusCode: 204, json: "")
+        let client = KotozuteClient.stubbed(transport: transport)
+
+        try await client.deleteMe()
+        var request = try XCTUnwrap(transport.lastRequest)
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(request.httpBody)) as? [String: Any])
+        XCTAssertEqual(request.httpMethod, "DELETE")
+        XCTAssertEqual(request.url?.path, "/Prod/me")
+        XCTAssertTrue(json.isEmpty)
+
+        try await client.deleteMe(DeleteMeRequest(appleAuthorizationCode: "c0de"))
+        request = try XCTUnwrap(transport.lastRequest)
+        json = try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(request.httpBody)) as? [String: Any])
+        XCTAssertEqual(json["appleAuthorizationCode"] as? String, "c0de")
+        XCTAssertNil(json["skipAppleRevoke"])
+    }
+
+    /// Apple が紐づいた人には 409 apple_reauth_required が返る。アプリはこれで本人確認を出す。
+    func testDeleteMeAppleReauthIsConflict() async throws {
+        let transport = StubTransport(statusCode: 409, json: #"{"error":"apple_reauth_required"}"#)
+        do {
+            try await KotozuteClient.stubbed(transport: transport).deleteMe()
+            XCTFail("エラーになるはず")
+        } catch let error as APIError {
+            XCTAssertEqual(error, .conflict(message: DeleteMeRequest.appleReauthRequired))
+        }
+    }
+
     // MARK: - エラー変換
 
     /// トークン無し/失効は 401。サインインに戻す判断に使う。
