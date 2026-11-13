@@ -22,7 +22,9 @@ struct SampleNote: View {
         Text(text)
             // 改行は指定しない。端末の幅や文字サイズの設定で崩れるため、
             // 紙のほうを画面に合わせて伸縮させ、折り返しは任せる。
-            .font(Theme.font(13))
+            // 文字も紙に合わせる。13 固定だと、大きい画面で紙だけ広がって文字が小さく見えた。
+            // 一辺の1割（132 で 13、iPhone 17 Pro の 170 前後で 17）。
+            .font(Theme.font(max(13, (side * 0.1).rounded())))
             .foregroundStyle(Theme.ink)
             .lineSpacing(4)
             .multilineTextAlignment(.leading)
@@ -64,7 +66,7 @@ struct WeekStrip: View {
                     }
 
                     Text(labels[day])
-                        .font(Theme.font(12, weight: day == openDayOfWeek ? .bold : .regular))
+                        .font(Theme.font(15, weight: day == openDayOfWeek ? .bold : .regular))
                         .foregroundStyle(day == openDayOfWeek ? .white : Theme.inkSoft)
                         .frame(width: 34, height: 34)
                         .background {
