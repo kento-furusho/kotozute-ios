@@ -102,6 +102,9 @@ final class AuthStore {
                 self.phase = .signedIn
             } catch AuthError.notConfirmed {
                 // 登録はできているがコード未確認。確認画面へ送る。
+                // いま打ったパスワードを持ち越す。持ち越さないと、確認画面で
+                // パスワードをもう一度聞くことになる（実際にそうなっていた）。
+                self.pendingPassword = password
                 self.phase = .needsConfirmation(email: email)
             }
         }
