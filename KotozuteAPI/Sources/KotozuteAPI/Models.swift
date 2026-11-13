@@ -395,3 +395,25 @@ public struct FeedbackRequest: Encodable, Sendable {
     /// サーバーが受け付ける本文の上限（文字数）。
     public static let maxLength = 2000
 }
+
+// MARK: - アカウント削除
+
+/// DELETE /me の本文。ふだんは空でよい。
+///
+/// Apple のログインが紐づいた人は、最初の呼び出しで 409（`appleReauthRequired`）が返る。
+/// Apple の本人確認で得た code を付けて呼び直すと、Apple 側の連携も取り消される
+/// （App Store 審査ガイドライン 5.1.1(v)）。
+public struct DeleteMeRequest: Encodable, Sendable, Equatable {
+    /// Sign in with Apple の authorizationCode（使い捨て・5分で切れる）。
+    public var appleAuthorizationCode: String?
+    /// Apple の本人確認ができなかったとき、取り消しなしで消す。
+    public var skipAppleRevoke: Bool?
+
+    public init(appleAuthorizationCode: String? = nil, skipAppleRevoke: Bool? = nil) {
+        self.appleAuthorizationCode = appleAuthorizationCode
+        self.skipAppleRevoke = skipAppleRevoke
+    }
+
+    /// サーバーが「Apple の本人確認をしてから呼び直して」と返すときの合図。
+    public static let appleReauthRequired = "apple_reauth_required"
+}

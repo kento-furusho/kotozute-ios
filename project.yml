@@ -64,6 +64,9 @@ targets:
         # ビルド構成ごとに出し分ける。Debug=development / Release=production。
         # 実機に Xcode から入れたものと、配布したものでは APNs のエンドポイントが別物。
         aps-environment: $(APS_ENVIRONMENT)
+        # アカウント削除の直前に Apple の本人確認を出す（AppleReauth）。ログインは Cognito の Web シートのままで、
+        # これは Apple の連携を取り消す code を受け取るためだけ（ガイドライン 5.1.1(v)）。
+        com.apple.developer.applesignin: [Default]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.kotozute.app

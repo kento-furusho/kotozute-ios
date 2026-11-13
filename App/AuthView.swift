@@ -135,9 +135,16 @@ struct AuthView: View {
             .background(.black)
             .clipShape(Capsule())
 
+            // Google の指針どおり、白地に公式の「G」（4色そのまま・加工しない）。
             externalButton(.google) {
-                Text("Googleで続ける")
-                    .foregroundStyle(Theme.ink)
+                HStack(spacing: 8) {
+                    Image("GoogleG")
+                        .resizable()
+                        .frame(width: 18, height: 18)
+                        .accessibilityHidden(true)
+                    Text("Googleで続ける")
+                        .foregroundStyle(Theme.ink)
+                }
             }
             .background(.white)
             .clipShape(Capsule())
