@@ -136,7 +136,7 @@ struct MainTabView: View {
         }
         .padding(.top, 12)
         .padding(.bottom, 6)
-        .background(Color(hex: 0xFFFCF6).opacity(0.95))
+        .background(Theme.surface.opacity(0.95))
         .overlay(alignment: .top) {
             Rectangle()
                 .fill(Theme.ink.opacity(0.08))

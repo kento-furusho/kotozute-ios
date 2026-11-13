@@ -109,6 +109,32 @@ public actor CognitoAuthenticator: TokenProvider {
         ))
     }
 
+    /// Apple / Google のログインから戻った認可コードを、トークンに交換して保存する。
+    /// 交換先は Cognito の `/oauth2/token`。PKCE の verifier を添える（`HostedUI` 参照）。
+    public func signIn(
+        authorizationCode code: String,
+        verifier: String,
+        hostedUI: HostedUIConfiguration,
+        session: URLSession = .shared
+    ) async throws {
+        var request = URLRequest(url: hostedUI.tokenURL)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.httpBody = HostedUI.tokenRequestBody(configuration: hostedUI, code: code, verifier: verifier)
+
+        let (data, response) = try await session.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200,
+              let tokens = try? JSONDecoder().decode(HostedUI.TokenResponse.self, from: data)
+        else {
+            throw AuthError.underlying(message: "ログインを完了できませんでした。もう一度お試しください。")
+        }
+        try tokenStore.save(AuthTokens(
+            idToken: tokens.idToken,
+            refreshToken: tokens.refreshToken,
+            expiresAt: Self.expiry(of: tokens.idToken)
+        ))
+    }
+
     public func signOut() throws {
         try tokenStore.clear()
     }

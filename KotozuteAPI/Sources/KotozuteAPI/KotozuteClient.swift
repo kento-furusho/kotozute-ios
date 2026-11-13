@@ -99,8 +99,12 @@ public struct KotozuteClient: Sendable {
     ///
     /// 消えるのは自分のことづてと自分のアカウント。相手が書いた分は相手のものなので残る。
     /// ペアは解消され、相手はまた誰かを招待できる状態に戻る。
-    public func deleteMe() async throws {
-        try await sendNoContent(.delete, "/me")
+    ///
+    /// Apple のログインが紐づいた人には、サーバーが何も消さずに
+    /// `APIError.conflict(message: DeleteMeRequest.appleReauthRequired)` を返す。
+    /// Apple の本人確認で得た code を付けて呼び直すと、Apple 側の連携も取り消して消す。
+    public func deleteMe(_ body: DeleteMeRequest = DeleteMeRequest()) async throws {
+        try await sendNoContent(.delete, "/me", body: body)
     }
 
     // MARK: - ご意見

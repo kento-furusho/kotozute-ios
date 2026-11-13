@@ -1,3 +1,4 @@
+import AuthenticationServices
 import Foundation
 import KotozuteAPI
 import KotozuteAuth
@@ -101,8 +102,43 @@ final class AuthStore {
                 self.phase = .signedIn
             } catch AuthError.notConfirmed {
                 // 登録はできているがコード未確認。確認画面へ送る。
+                // いま打ったパスワードを持ち越す。持ち越さないと、確認画面で
+                // パスワードをもう一度聞くことになる（実際にそうなっていた）。
+                self.pendingPassword = password
                 self.phase = .needsConfirmation(email: email)
             }
+        }
+    }
+
+    /// Apple / Google でログインする（新規登録も同じ入口）。
+    ///
+    /// `authenticate` は Web シートを開いて、戻ってきた URL を返す
+    /// （画面側の `WebAuthenticationSession`）。ここでは画面の部品に触れない。
+    /// 初めての人は、このあと GET /me が「未登録」を返し、表示名の画面へ進む（メール登録と同じ）。
+    func signIn(
+        with provider: ExternalProvider,
+        authenticate: @escaping (_ url: URL, _ callbackScheme: String) async throws -> URL
+    ) async {
+        await perform {
+            let hostedUI = HostedUIConfiguration(
+                domain: Config.authDomain,
+                clientId: Config.userPoolClientId,
+                redirectURI: Config.authRedirectURI
+            )
+            let pkce = PKCE.generate()
+            let state = UUID().uuidString
+            let url = HostedUI.authorizeURL(configuration: hostedUI, provider: provider, pkce: pkce, state: state)
+
+            let callback: URL
+            do {
+                callback = try await authenticate(url, hostedUI.callbackScheme)
+            } catch let error as ASWebAuthenticationSessionError where error.code == .canceledLogin {
+                // 本人が閉じた。エラーは出さない。
+                return
+            }
+            let code = try HostedUI.parseCallback(callback, expectedState: state)
+            try await self.authenticator.signIn(authorizationCode: code, verifier: pkce.verifier, hostedUI: hostedUI)
+            self.phase = .signedIn
         }
     }
 
@@ -124,8 +160,18 @@ final class AuthStore {
             try await work()
         } catch let error as AuthError {
             errorMessage = Self.message(for: error)
+        } catch let error as HostedUIError {
+            errorMessage = Self.message(for: error)
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    private static func message(for error: HostedUIError) -> String {
+        switch error {
+        // 同じメールで登録済みのアカウントに紐づけた直後。Cognito の仕様でこの1回だけ失敗になる。
+        case .accountLinked: "メールアドレスで登録済みのアカウントとまとめました。もう一度、同じボタンを押してください。"
+        case .stateMismatch, .missingCode, .provider: "ログインできませんでした。もう一度お試しください。"
         }
     }
 

@@ -47,7 +47,7 @@ struct OnboardingView: View {
         HStack {
             Spacer()
             Button("スキップ", action: onStart)
-                .font(Theme.font(15))
+                .font(Theme.font(16))
                 .foregroundStyle(Theme.inkSoft)
                 .opacity(isLastPage ? 0 : 1)
                 .disabled(isLastPage)
@@ -70,13 +70,13 @@ struct OnboardingView: View {
 
             // 誰と、何をするアプリなのかを1行で。App Store のサブタイトルにも使う。
             Text("大切な人とありがとうをためるアプリ")
-                .font(Theme.font(14, weight: .medium))
+                .font(Theme.font(16, weight: .medium))
                 .foregroundStyle(Theme.inkSoft)
                 .padding(.top, 10)
                 .appearsInOrder(1)
 
             Text("「ありがとう」「いいな」と思ったら\nことづてを送りましょう。")
-                .font(Theme.font(16))
+                .font(Theme.font(18))
                 .foregroundStyle(Theme.inkSoft)
                 .multilineTextAlignment(.center)
                 .lineSpacing(6)
@@ -132,7 +132,7 @@ struct OnboardingView: View {
                 .foregroundStyle(Theme.ink)
 
             Text(body)
-                .font(Theme.font(16))
+                .font(Theme.font(18))
                 .foregroundStyle(Theme.inkSoft)
                 .multilineTextAlignment(.center)
                 .lineSpacing(6)
@@ -167,7 +167,7 @@ struct OnboardingView: View {
 
             // 戻ってきた人が4枚めくらされないよう、最初から出しておく。
             Button("アカウントを持っている", action: onSignIn)
-                .font(Theme.font(15))
+                .font(Theme.font(16))
                 .foregroundStyle(Theme.inkSoft)
                 .padding(.top, 16)
         }

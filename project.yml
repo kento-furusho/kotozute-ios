@@ -33,8 +33,8 @@ targets:
         # ここに書かないと XcodeGen の既定値（1.0 / 1）が使われ、
         # 下の MARKETING_VERSION / CURRENT_PROJECT_VERSION は効かない。
         # 実際 0.1 と書いてあるのに 1.0 で出ていた。版を上げるときはここを直す。
-        CFBundleShortVersionString: "1.0.4"
-        CFBundleVersion: "16"
+        CFBundleShortVersionString: "1.0.5"
+        CFBundleVersion: "17"
         # 日本語アプリだと明示する。$(DEVELOPMENT_LANGUAGE) のままだと en になり、
         # OS が出すメニュー（テキスト選択の Copy / Look Up など）が英語で出る。
         CFBundleDevelopmentRegion: ja
@@ -64,6 +64,9 @@ targets:
         # ビルド構成ごとに出し分ける。Debug=development / Release=production。
         # 実機に Xcode から入れたものと、配布したものでは APNs のエンドポイントが別物。
         aps-environment: $(APS_ENVIRONMENT)
+        # アカウント削除の直前に Apple の本人確認を出す（AppleReauth）。ログインは Cognito の Web シートのままで、
+        # これは Apple の連携を取り消す code を受け取るためだけ（ガイドライン 5.1.1(v)）。
+        com.apple.developer.applesignin: [Default]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.kotozute.app
@@ -73,8 +76,8 @@ targets:
         # entitlements が適用されない（aps-environment が入らず通知が登録できない）。
         DEVELOPMENT_TEAM: 5V6S74G5N9
         CODE_SIGN_STYLE: Automatic
-        MARKETING_VERSION: "1.0.4"
-        CURRENT_PROJECT_VERSION: "16"
+        MARKETING_VERSION: "1.0.5"
+        CURRENT_PROJECT_VERSION: "17"
         # iPhone のみ。
         TARGETED_DEVICE_FAMILY: "1"
         # アイコンが無いと App Store Connect へのアップロードが弾かれる
