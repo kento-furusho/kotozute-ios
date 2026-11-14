@@ -103,12 +103,12 @@ struct OnboardingView: View {
             let side = (geometry.size.width - 12) / 2
             VStack(spacing: 14) {
                 HStack(alignment: .top, spacing: 12) {
-                    SampleNote(text: "洗い物してくれてありがとう", paperIndex: 0, tilt: -3, side: side)
+                    SampleNote(text: "いつのまにか洗い物してくれてて助かった！", paperIndex: 0, tilt: -3, side: side)
                         .appearsInOrder(3)
-                    SampleNote(text: "昨日作ってくれたカレーがおいしかった！", paperIndex: 2, tilt: 4, side: side)
+                    SampleNote(text: "話をしっかり聞いてくれてありがとう、スッキリした", paperIndex: 2, tilt: 4, side: side)
                         .appearsInOrder(4)
                 }
-                SampleNote(text: "何にでも好奇心があっていい！", paperIndex: 1, tilt: -2, side: side)
+                SampleNote(text: "甘いもの買ってきてくれてありがとう", paperIndex: 3, tilt: -2, side: side)
                     .appearsInOrder(5)
             }
             .frame(maxWidth: .infinity)
