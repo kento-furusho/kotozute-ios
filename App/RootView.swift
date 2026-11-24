@@ -256,7 +256,7 @@ struct ProfileSetupView: View {
 /// ほかは控えめにした。「ことづてを書く」は、直前の画面で書いたばかりなので外した
 /// （ホームからいつでも書ける）。招待コードは長い英数字なので、ふだんは畳んでおく
 /// （「リンクを送る」の文面にコードは入っている）。
-/// 1枚目を「あとで書く」で飛ばした人には、付箋の代わりに「ことづてを書く」を出す。
+/// 1枚目を「あとで書く」で飛ばした人には、送るボタンの下に「先に1枚書いておく」を出す。
 struct InviteView: View {
     @Bindable var store: KotozuteStore
     @Bindable var auth: AuthStore
@@ -315,6 +315,8 @@ struct InviteView: View {
                     ProgressView()
                         .padding(.top, 48)
                 }
+
+                writeFirst
 
                 codeEntry
                     .padding(.top, 36)
@@ -433,16 +435,30 @@ struct InviteView: View {
                     .frame(width: 208)
             }
             .padding(.top, 28)
-        } else {
-            // 前の画面で「あとで書く」を選んだ人。書く入口をここにも残す
-            // （まだ1枚も無いので、相手を誘う前に書いておけるように）。
-            Button {
-                isWriting = true
-            } label: {
-                Label("ことづてを書く", systemImage: "square.and.pencil")
+        }
+    }
+
+    /// 前の画面で「あとで書く」を選んだ人に、送る前に書いておく道を残す。
+    ///
+    /// **「リンクを送る」より下に置く。** 以前は付箋の場所（送るボタンの上）に
+    /// 「ことづてを書く」を出していて、この画面で何をすればいいのか分かりにくかった。
+    /// まずしてほしいのは送ること。書いておくのは、そのあとに選べる寄り道にする。
+    @ViewBuilder
+    private var writeFirst: some View {
+        if store.myKotozute.isEmpty {
+            VStack(spacing: 10) {
+                Text("つながった相手が最初に見るのは、あなたのことづてです。")
+                    .font(Theme.font(13))
+                    .foregroundStyle(Theme.inkSoft)
+                    .multilineTextAlignment(.center)
+                Button {
+                    isWriting = true
+                } label: {
+                    Label("先に1枚書いておく", systemImage: "square.and.pencil")
+                }
+                .buttonStyle(OutlineButtonStyle())
             }
-            .buttonStyle(OutlineButtonStyle())
-            .padding(.top, 28)
+            .padding(.top, 36)
         }
     }
 
