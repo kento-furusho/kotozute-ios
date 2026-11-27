@@ -10,7 +10,11 @@ struct SettingsView: View {
     @Bindable var auth: AuthStore
     /// ペア未成立のとき、招待画面へ戻る。
     var onInvite: () -> Void = {}
+    /// ペア未成立のとき、もらった招待コードを入れる。
+    /// コードを入れずに登録してしまった人の入口（ふつうは最初の画面から入る）。
+    var onInviteCode: (String) -> Void = { _ in }
 
+    @State private var showsCodeEntry = false
     @State private var intervalWeeks = 1
     @State private var dayOfWeek = 5
     @State private var hour = 20
@@ -145,6 +149,13 @@ struct SettingsView: View {
                         .font(Theme.font(15))
                         .foregroundStyle(Theme.accent)
                         .padding(.top, 14)
+                    Button("招待コードを入れる") { showsCodeEntry = true }
+                        .font(Theme.font(15))
+                        .foregroundStyle(Theme.inkSoft)
+                        .padding(.top, 10)
+                        .sheet(isPresented: $showsCodeEntry) {
+                            InviteCodeEntryView(onSubmit: onInviteCode)
+                        }
                 }
 
                 Divider().padding(.vertical, 28)
