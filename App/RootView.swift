@@ -38,7 +38,9 @@ struct RootView: View {
                     // 分かっている状態を作る。
                     OnboardingView(
                         onStart: { entry = .register },
-                        onSignIn: { entry = .signIn }
+                        onSignIn: { entry = .signIn },
+                        // コードを受け取ると pendingToken が入り、上の「誰からの招待か」に切り替わる。
+                        onInviteCode: { router.accept(token: $0) }
                     )
                 }
             case .signedIn:
@@ -115,9 +117,12 @@ struct SignedInView: View {
                 } else if showsHomeWithoutPair {
                     // 相手を待つあいだもアプリを使える。ことづてはペア未成立でも
                     // 書けるので、招待画面で足止めしない。
-                    MainTabView(store: store, auth: auth, wall: wall, calendar: calendar) {
-                        showsHomeWithoutPair = false
-                    }
+                    // 設定でコードを入れると pendingToken が入り、上の受諾の画面に切り替わる。
+                    MainTabView(
+                        store: store, auth: auth, wall: wall, calendar: calendar,
+                        onInvite: { showsHomeWithoutPair = false },
+                        onInviteCode: { router.accept(token: $0) }
+                    )
                 } else {
                     InviteView(store: store, auth: auth, router: router, showsSteps: !hasLeftOnboarding) {
                         hasLeftOnboarding = true
@@ -251,12 +256,16 @@ struct ProfileSetupView: View {
 /// ペア未成立のとき。オンボーディングの締めで、相手を誘う画面。登録直後の3枚の3枚目。
 /// 設定の「ペアを組む」からも来る。
 ///
-/// 以前はボタンが4つ縦に並び（リンクを送る／ことづてを書く／招待をもらっている／ホームに戻る）、
-/// どれを押せばいいのか迷った。いちばんしてほしいこと（リンクを送る）だけを大きくし、
-/// ほかは控えめにした。「ことづてを書く」は、直前の画面で書いたばかりなので外した
-/// （ホームからいつでも書ける）。招待コードは長い英数字なので、ふだんは畳んでおく
-/// （「リンクを送る」の文面にコードは入っている）。
-/// 1枚目を「あとで書く」で飛ばした人には、送るボタンの下に「先に1枚書いておく」を出す。
+/// **2段階にする。** 1段階目でできることは「リンクを送る」だけ（いちばん下に小さく「あとで送る」）。
+/// 送ったあと（共有シートで実際に送ったときだけ）に、2段階目として
+/// 「ことづてを書いておきますか？」を出す。
+///
+/// 以前は1つの画面に、送る・書く・招待コードを見る・招待をもらっている・あとで、が並び、
+/// どれを押せばいいのか迷った。とくに「ことづてを書く」が送るボタンの上にあったり、
+/// 招待された人向けの「招待をもらっている」が送る人の画面の真ん中にあったりした。
+/// 招待コードを入れる入口は、最初の「はじめる」の画面と設定に移した（InviteCodeEntryView）。
+///
+/// 画面の高さいっぱいに広げ、ボタンは下寄りに置く（上に詰めると親指で押しにくい）。
 struct InviteView: View {
     @Bindable var store: KotozuteStore
     @Bindable var auth: AuthStore
@@ -265,18 +274,12 @@ struct InviteView: View {
     var showsSteps = false
     /// ペアを待たずにアプリへ入る。
     var onHome: () -> Void = {}
-    @State private var enteredCode = ""
-    @State private var showsCodeEntry = false
-    @State private var showsMyCode = false
     @State private var isWriting = false
-    /// 共有シートで実際に送った（閉じただけではない）。
+    /// 共有シートで実際に送った（閉じただけではない）。2段階目に進む。
     @State private var didSend = false
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        // 画面の高さいっぱいに広げ、上・真ん中より下・いちばん下に分けて置く。
-        // 以前は上から詰めて並べていて、ボタンが画面の上半分に寄り、親指で押しにくかった。
-        // 入りきらないとき（小さい画面・コード入力を開いたとき）はスクロールする。
         GeometryReader { proxy in
         ScrollView {
             VStack(spacing: 0) {
@@ -285,12 +288,12 @@ struct InviteView: View {
                         .padding(.top, 20)
                 }
 
-                Text("ふたりではじめる")
+                Text(didSend ? "送りました" : "ふたりではじめる")
                     .font(Theme.font(26, weight: .bold))
                     .foregroundStyle(Theme.ink)
                     .padding(.top, showsSteps ? 32 : 48)
 
-                Text("リンクを送れば、それだけで始められます。")
+                Text(subtitle)
                     .font(Theme.font(15))
                     .foregroundStyle(Theme.inkSoft)
                     .multilineTextAlignment(.center)
@@ -301,51 +304,19 @@ struct InviteView: View {
 
                 firstNote
 
-                // 送るボタンは真ん中より下に。
                 Spacer(minLength: 32)
 
-                if let token = store.inviteToken {
-                    // 大きいボタンはこれ1つだけ。この画面でしてほしいことは送ることなので。
-                    Button {
-                        share(token)
-                    } label: {
-                        Label(didSend ? "もう一度送る" : "リンクを送る", systemImage: "square.and.arrow.up")
-                            .font(Theme.font(17, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(Theme.accent)
-                            .clipShape(Capsule())
-                    }
-
-                    if didSend {
-                        afterSend
-                    } else {
-                        writeFirst
-                    }
-
-                    myCode(token)
+                if didSend {
+                    afterSend
                 } else {
-                    ProgressView()
+                    beforeSend
                 }
-
-                Spacer(minLength: 40)
-
-                // 招待された側の入口と、先にアプリへ入る道。どちらも寄り道なので、
-                // 枠のボタンにせず、下に小さく寄せる。
-                VStack(spacing: 14) {
-                    codeEntry
-                    Button("あとで送る") { onHome() }
-                        .font(Theme.font(14))
-                        .foregroundStyle(Theme.inkSoft)
-                }
-                .padding(.bottom, 24)
             }
             .padding(.horizontal, 28)
+            .padding(.bottom, 24)
             .frame(minHeight: proxy.size.height)
         }
         }
-        .scrollDismissesKeyboard(.interactively)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.background.ignoresSafeArea())
         // 開いた時点でリンクを用意しておく。誘うのが目的の画面なので、
@@ -361,10 +332,73 @@ struct InviteView: View {
         }
     }
 
+    private var subtitle: String {
+        if !didSend { return "リンクを送れば、それだけで始められます。" }
+        if store.myKotozute.isEmpty { return "ことづてを書いておきますか？\n相手が最初に読むのは、このことづてです。" }
+        return "相手が登録して招待コードを入れると、\nペアになります。"
+    }
+
+    /// 1段階目。できることは送ることだけ。
+    @ViewBuilder
+    private var beforeSend: some View {
+        if let token = store.inviteToken {
+            primaryButton("リンクを送る", systemImage: "square.and.arrow.up") { share(token) }
+        } else {
+            ProgressView()
+                .frame(height: 56)
+        }
+
+        // 送る相手がまだ決まっていない人の逃げ道。無いと、ここから先に進めなくなる。
+        Button("あとで送る") { onHome() }
+            .font(Theme.font(14))
+            .foregroundStyle(Theme.inkSoft)
+            .padding(.top, 28)
+    }
+
+    /// 2段階目。まだ1枚も無ければ、書いておくかを聞く。
+    @ViewBuilder
+    private var afterSend: some View {
+        if store.myKotozute.isEmpty {
+            primaryButton("ことづてを書く", systemImage: "square.and.pencil") { isWriting = true }
+            Button("あとで") { onHome() }
+                .font(Theme.font(15))
+                .foregroundStyle(Theme.inkSoft)
+                .padding(.top, 20)
+        } else {
+            primaryButton("ホームへ", systemImage: nil) { onHome() }
+        }
+
+        // 送り損ねた・別の人に送り直したいとき。
+        if let token = store.inviteToken {
+            Button("もう一度送る") { share(token) }
+                .font(Theme.font(14))
+                .foregroundStyle(Theme.inkSoft)
+                .padding(.top, 16)
+        }
+    }
+
+    private func primaryButton(_ title: String, systemImage: String?, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Group {
+                if let systemImage {
+                    Label(title, systemImage: systemImage)
+                } else {
+                    Text(title)
+                }
+            }
+            .font(Theme.font(17, weight: .bold))
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(Theme.accent)
+            .clipShape(Capsule())
+        }
+    }
+
     /// 共有シートを出す。
     ///
     /// ShareLink ではなく UIActivityViewController を使うのは、送ったのか
-    /// 閉じただけなのかを知るため。送ったあとにだけ「送りました」を出す。
+    /// 閉じただけなのかを知るため。送ったときだけ2段階目に進む。
     private func share(_ token: String) {
         let sheet = UIActivityViewController(activityItems: [Self.message(token: token)], applicationActivities: nil)
         sheet.completionWithItemsHandler = { _, completed, _, _ in
@@ -384,103 +418,6 @@ struct InviteView: View {
         top.present(sheet, animated: true)
     }
 
-    /// 送ったあと。まだ1枚も無ければ、相手が来るまでに書いておくよう勧める。
-    @ViewBuilder
-    private var afterSend: some View {
-        VStack(spacing: 8) {
-            Text("送りました")
-                .font(Theme.font(17, weight: .bold))
-                .foregroundStyle(Theme.ink)
-            if store.myKotozute.isEmpty {
-                Text("相手が来るまでに、最初のことづてを書いておきましょう。")
-                    .font(Theme.font(14))
-                    .foregroundStyle(Theme.inkSoft)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(3)
-                Button {
-                    isWriting = true
-                } label: {
-                    Label("ことづてを書く", systemImage: "square.and.pencil")
-                }
-                .buttonStyle(OutlineButtonStyle(tint: Theme.ink))
-                .padding(.top, 6)
-            } else {
-                Text("相手が登録して招待コードを入れると、ペアになります。")
-                    .font(Theme.font(14))
-                    .foregroundStyle(Theme.inkSoft)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(3)
-            }
-        }
-        .padding(.top, 28)
-    }
-
-    /// 自分の招待コード。ふだんは畳む（送る文面に入っているので、見る必要がある人は少ない）。
-    @ViewBuilder
-    private func myCode(_ token: String) -> some View {
-        Button {
-            withAnimation(.easeInOut(duration: 0.18)) { showsMyCode.toggle() }
-        } label: {
-            HStack(spacing: 4) {
-                Text(showsMyCode ? "招待コードを隠す" : "招待コードを表示")
-                Image(systemName: showsMyCode ? "chevron.up" : "chevron.down")
-                    .font(.system(size: 11, weight: .semibold))
-            }
-            .font(Theme.font(13))
-            .foregroundStyle(Theme.inkSoft)
-        }
-        .padding(.top, 16)
-
-        if showsMyCode {
-            Text(token)
-                .font(Theme.font(13, weight: .medium))
-                .foregroundStyle(Theme.ink)
-                .textSelection(.enabled)
-                .padding(12)
-                .frame(maxWidth: .infinity)
-                .background(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.line, lineWidth: 1))
-                .padding(.top, 8)
-
-            Text("長押しでコピーできます。")
-                .font(Theme.font(12))
-                .foregroundStyle(Theme.inkSoft)
-                .padding(.top, 6)
-        }
-    }
-
-    /// 相手から招待を受け取った人の入口。
-    @ViewBuilder
-    private var codeEntry: some View {
-        VStack(spacing: 0) {
-            Button(showsCodeEntry ? "閉じる" : "招待をもらっている方") {
-                withAnimation(.easeInOut(duration: 0.18)) { showsCodeEntry.toggle() }
-            }
-            .font(Theme.font(14))
-            .foregroundStyle(Theme.inkSoft)
-
-            if showsCodeEntry {
-                HStack(spacing: 10) {
-                    TextField("招待コード", text: $enteredCode)
-                        .font(Theme.font(15))
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .padding(12)
-                        .background(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.line, lineWidth: 1))
-
-                    Button("すすむ") { router.accept(token: enteredCode.trimmingCharacters(in: .whitespacesAndNewlines)) }
-                        .font(Theme.font(15, weight: .bold))
-                        .foregroundStyle(enteredCode.isEmpty ? Theme.inkSoft : Theme.accent)
-                        .disabled(enteredCode.isEmpty)
-                }
-                .padding(.top, 12)
-            }
-        }
-    }
-
     /// もう書いてある1枚目。「送れば、これがふたりの壁になる」を目に見える形にする。
     /// デザイン案（初回導線B ⑤）はここに1枚目を置いている。
     @ViewBuilder
@@ -498,7 +435,7 @@ struct InviteView: View {
             }
         } else {
             // まだ1枚も無い人には、ふたりぶんの白紙を飾りとして置く。
-            // 押せるものに見えないよう、文字もボタンも載せない（書く入口は送るボタンの下）。
+            // 押せるものに見えないよう、文字もボタンも載せない。
             HStack(spacing: -28) {
                 SampleNote(text: "", paperIndex: 0, tilt: -6, side: 116)
                 SampleNote(text: "", paperIndex: 3, tilt: 5, side: 116)
@@ -508,44 +445,21 @@ struct InviteView: View {
         }
     }
 
-    /// 前の画面で「あとで書く」を選んだ人に、送る前に書いておく道を残す。
-    ///
-    /// **送るボタンの下に、文字のリンクで置く。** 以前は送るボタンの上に枠のボタンで
-    /// 「ことづてを書く」を出していて、この画面で何をすればいいのか分かりにくかった。
-    /// まずしてほしいのは送ること。書いておくのは、選んでもいい寄り道にする。
-    @ViewBuilder
-    private var writeFirst: some View {
-        if store.myKotozute.isEmpty {
-            VStack(spacing: 4) {
-                Text("先に書いておくと、相手が最初に読めます。")
-                    .font(Theme.font(13))
-                    .foregroundStyle(Theme.inkSoft)
-                Button("ことづてを書いておく") { isWriting = true }
-                    .font(Theme.font(15, weight: .bold))
-                    .foregroundStyle(Theme.accent)
-            }
-            .multilineTextAlignment(.center)
-            .padding(.top, 20)
-        }
-    }
-
-    /// リンクとコードの両方を載せる。独自スキームのリンクは
-    /// アプリによっては押せないので、コードだけでも受け取れるようにする。
-    /// 「リンクを送る」で LINE などに貼られる文。
+    /// 「リンクを送る」で LINE などに貼られる文。リンクとコードの両方を載せる。
     ///
     /// **送る本人の言葉で、ていねいに。** 以前は「ことづてに誘われている。」で始まっていて、
     /// 受け取った側の言い方だった（送り主が「私が誘われている」と言っているように読める）。
     ///
     /// **App Store のリンクを入れる。** 相手はまだアプリを持っていない。
-    /// 以前は kotozute:// のリンクだけで、LINE やメッセージでは押せる形にならず、
-    /// アプリが無い人が押しても何も起きなかった。入手先も書いていなかった。
+    /// 独自スキームのリンク（kotozute://）は LINE やメッセージでは押せる形にならないので、
+    /// コードを入れてもらう。入れる場所は、最初の画面の「招待コードをお持ちの方」。
     private static func message(token: String) -> String {
         """
         「ことづて」というアプリで、ありがとうを送り合いませんか？
         こちらからダウンロードできます。
         \(Config.appStoreURL.absoluteString)
 
-        登録したら「招待をもらっている方」から、このコードを入れてください。
+        アプリを開いたら、最初の画面の「招待コードをお持ちの方」から、このコードを入れてください。
         \(token)
         """
     }

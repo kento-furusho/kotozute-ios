@@ -11,10 +11,13 @@ import SwiftUI
 struct OnboardingView: View {
     let onStart: () -> Void
     let onSignIn: () -> Void
+    /// 招待された人がコードを入れたとき。登録より前に受け取り、招待リンクから来たときと同じ流れに乗せる。
+    var onInviteCode: (String) -> Void = { _ in }
     /// 確認用に途中のページから開けるようにしている。通常は 0。
     var startPage = 0
 
     @State private var page = 0
+    @State private var showsCodeEntry = false
 
     private static let pageCount = 2
 
@@ -38,6 +41,9 @@ struct OnboardingView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.background.ignoresSafeArea())
         .onAppear { page = startPage }
+        .sheet(isPresented: $showsCodeEntry) {
+            InviteCodeEntryView(onSubmit: onInviteCode)
+        }
     }
 
     private var isLastPage: Bool { page == Self.pageCount - 1 }
@@ -170,6 +176,13 @@ struct OnboardingView: View {
                 .font(Theme.font(16))
                 .foregroundStyle(Theme.inkSoft)
                 .padding(.top, 16)
+
+            // 招待された人の入口。招待する人の画面に置くと、送るボタンの邪魔になるのでここに置く。
+            // 招待メッセージにも「最初の画面の『招待コードをお持ちの方』から」と書いてある。
+            Button("招待コードをお持ちの方") { showsCodeEntry = true }
+                .font(Theme.font(14))
+                .foregroundStyle(Theme.inkSoft)
+                .padding(.top, 12)
         }
         .padding(.horizontal, 28)
         .padding(.bottom, 24)
