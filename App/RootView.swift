@@ -274,6 +274,10 @@ struct InviteView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
+        // 画面の高さいっぱいに広げ、上・真ん中より下・いちばん下に分けて置く。
+        // 以前は上から詰めて並べていて、ボタンが画面の上半分に寄り、親指で押しにくかった。
+        // 入りきらないとき（小さい画面・コード入力を開いたとき）はスクロールする。
+        GeometryReader { proxy in
         ScrollView {
             VStack(spacing: 0) {
                 if showsSteps {
@@ -293,7 +297,12 @@ struct InviteView: View {
                     .lineSpacing(4)
                     .padding(.top, 10)
 
+                Spacer(minLength: 24)
+
                 firstNote
+
+                // 送るボタンは真ん中より下に。
+                Spacer(minLength: 32)
 
                 if let token = store.inviteToken {
                     // 大きいボタンはこれ1つだけ。この画面でしてほしいことは送ることなので。
@@ -308,7 +317,6 @@ struct InviteView: View {
                             .background(Theme.accent)
                             .clipShape(Capsule())
                     }
-                    .padding(.top, 32)
 
                     if didSend {
                         afterSend
@@ -319,8 +327,9 @@ struct InviteView: View {
                     myCode(token)
                 } else {
                     ProgressView()
-                        .padding(.top, 48)
                 }
+
+                Spacer(minLength: 40)
 
                 // 招待された側の入口と、先にアプリへ入る道。どちらも寄り道なので、
                 // 枠のボタンにせず、下に小さく寄せる。
@@ -330,10 +339,11 @@ struct InviteView: View {
                         .font(Theme.font(14))
                         .foregroundStyle(Theme.inkSoft)
                 }
-                .padding(.top, 44)
-                .padding(.bottom, 32)
+                .padding(.bottom, 24)
             }
             .padding(.horizontal, 28)
+            .frame(minHeight: proxy.size.height)
+        }
         }
         .scrollDismissesKeyboard(.interactively)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -482,10 +492,19 @@ struct InviteView: View {
                     .font(Theme.font(12, weight: .medium))
                     .foregroundStyle(Theme.inkSoft)
 
+                // 正方形に固定する。高さを決めないと、上下の余白（Spacer）のぶんまで紙が伸びる。
                 StickyNote(kotozute: first, paper: first.color.flatMap(Theme.stickyPaper(hex:)) ?? Theme.stickyPaper(at: 0), tilt: -2)
-                    .frame(width: 208)
+                    .frame(width: 208, height: 208)
             }
-            .padding(.top, 28)
+        } else {
+            // まだ1枚も無い人には、ふたりぶんの白紙を飾りとして置く。
+            // 押せるものに見えないよう、文字もボタンも載せない（書く入口は送るボタンの下）。
+            HStack(spacing: -28) {
+                SampleNote(text: "", paperIndex: 0, tilt: -6, side: 116)
+                SampleNote(text: "", paperIndex: 3, tilt: 5, side: 116)
+                    .offset(y: 14)
+            }
+            .accessibilityHidden(true)
         }
     }
 
